@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.common.spring.menu">
+    <resultMap id="menuMap" type="MenuInfo">
+        <result property="groupLevel" column="LEVELCOD"/>
+        <result property="menuId" column="MENU_ID"/>
+        <!-- <result property="menuNm" column="MENU_NM"/> -->
+        <result property="menuNmKor" column="MENU_NM_KOR"/>
+        <result property="menuNmEng" column="MENU_NM_ENG"/>
+        <result property="menuNmJpn" column="MENU_NM_JPN"/>
+        <result property="upMenuId" column="P_MENU_ID"/>
+        <result property="menuType" column="MENU_TYPE"/>
+        <result property="seq" column="SEQ"/>
+        <result property="level" column="LVL"/>
+        <result property="url" column="URL"/>
+        <result property="menu_icon" column="MENU_ICON"/>
+    </resultMap>
+
+    <!-- 화면페이지별오브젝트명칭정보를 취득한다 -->
+    <select id="getMenuInfoByLevelCod" resultMap="menuMap" parameterType="String">
+        SELECT B.LEVELCOD
+        ,A.MENU_ID
+        ,A.MENU_NM_KOR
+        ,A.MENU_NM_ENG
+        ,A.MENU_NM_JPN
+        ,A.P_MENU_ID
+        ,A.MENU_TYPE
+        ,A.SEQ
+        ,A.URL
+        ,A.LVL
+        ,A.MENU_ICON
+        FROM (
+        SELECT MENU_ID
+        <!-- , (CASE SUBSTR(#{p_src_env}, 1, 3) WHEN 'KOR' THEN MENU_NM_KOR WHEN 'ENG' THEN MENU_NM_ENG WHEN 'JPN' THEN MENU_NM_JPN ELSE MENU_NM_KOR END) AS MENU_NM -->
+        , MENU_NM_KOR
+        , MENU_NM_ENG
+        , MENU_NM_JPN
+        , P_MENU_ID
+        , MENU_TYPE
+        , SEQ
+        , URL
+        , LVL
+        , MENU_ICON
+        FROM MGMT_MENUMST
+        ) A, MGMT_GROUPLEVEL_MENU B
+        WHERE 1 = 1
+        AND A.MENU_ID = B.MENU_ID
+        AND (CASE WHEN A.P_MENU_ID = '' THEN '1' WHEN A.P_MENU_ID IS NULL THEN '1' ELSE A.P_MENU_ID END)
+        = (CASE WHEN B.P_MENU_ID = '' THEN '1' WHEN B.P_MENU_ID IS NULL THEN '1' ELSE B.P_MENU_ID END)
+        AND B.LEVELCOD <![CDATA[=]]> #{levelcod, jdbcType=VARCHAR}
+        ORDER BY A.SEQ
+    </select>
+
+    <!-- 메뉴리스트 정보취득하여 객체에 매핑한다-->
+    <resultMap id="menuListMap" type="MenuInfo">
+        <result property="menuId" column="MENU_ID"/>
+        <!-- <result property="menuNm" column="MENU_NM"/> -->
+        <result property="menuNmKor" column="MENU_NM_KOR"/>
+        <result property="menuNmEng" column="MENU_NM_ENG"/>
+        <result property="menuNmJpn" column="MENU_NM_JPN"/>
+        <result property="upMenuId" column="P_MENU_ID"/>
+        <result property="menuType" column="MENU_TYPE"/>
+        <result property="seq" column="SEQ"/>
+        <result property="url" column="URL"/>
+        <result property="level" column="LVL"/>
+        <result property="menu_icon" column="MENU_ICON"/>
+    </resultMap>
+
+    <!-- 메뉴리스트정보를 취득한다 -->
+    <select id="getAllMenuList" resultMap="menuListMap">
+        SELECT MENU_ID
+        <!-- , (CASE SUBSTR(#{p_src_env}, 1, 3) WHEN 'KOR' THEN MENU_NM_KOR WHEN 'ENG' THEN MENU_NM_ENG WHEN 'JPN' THEN MENU_NM_JPN ELSE MENU_NM_KOR END) AS MENU_NM -->
+        , MENU_NM_KOR
+        , MENU_NM_ENG
+        , MENU_NM_JPN
+        , P_MENU_ID
+        , MENU_TYPE
+        , SEQ
+        , URL
+        , LVL
+        , MENU_ICON
+        FROM MGMT_MENUMST
+        ORDER BY SEQ
+    </select>
+
+</mapper>

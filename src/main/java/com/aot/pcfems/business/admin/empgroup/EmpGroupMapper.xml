@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.admin.empgroup">
+
+    <!-- 유저정보 매핑을 설정 -->
+    <resultMap id="userGroupMap" type="UserGroupInfo">
+        <result property="code" column="GROUP_ID"/>
+        <result property="name" column="GROUP_NM"/>
+        <result property="groupLevel" column="LEVELCOD"/>
+        <result property="remark" column="REMARK"/>
+        <result property="levelcodnm" column="LEVELCODNM"/>
+    </resultMap>
+
+    <!-- 유저그룹정보를 등록 한다 -->
+    <insert id="doInsertUserGroupInfo" parameterType="UserGroupInfo">
+        <selectKey keyProperty="code" resultType="string" order="BEFORE">
+            SELECT CONVERT(IFNULL(MAX(GROUP_ID),0) + 1 , CHAR) AS NO
+            FROM MGMT_SYSUSRGRP
+        </selectKey>
+        INSERT INTO MGMT_SYSUSRGRP
+        (GROUP_ID,
+        GROUP_NM,
+        LEVELCOD,
+        REMARK,
+        CRT_ID,
+        CRT_DT,
+        UPD_ID,
+        UPD_DT
+        )
+        VALUES
+        (#{code},
+        #{name},
+        #{groupLevel},
+        #{remark},
+        #{crtUser},
+        now(),
+        #{crtUser},
+        now())
+    </insert>
+
+    <!-- 유저그룹정보 취득 -->
+    <select id="getUserGroupInfo" resultMap="userGroupMap" parameterType="EmpGroupSearchInfo">
+         SELECT A.GROUP_ID,
+       				A.GROUP_NM,
+       				A.LEVELCOD,
+       				A.REMARK,
+       				(SELECT (CASE #{user_lang}
+				                   WHEN 'KOR' THEN B.CODENM_K
+				                   WHEN 'ENG' THEN B.CODENM_E
+				                   WHEN 'JPN' THEN B.CODENM_J
+				                   ELSE B.CODENM_K
+				                END)
+				          FROM MGMT_SYSCOD2T B
+				         WHERE GRCODE = 'P104' AND CODE = A.LEVELCOD
+				     ) AS LEVELCODNM         
+           FROM MGMT_SYSUSRGRP A,
+           			VW_MGMT_GROUPLEVEL B
+          WHERE  A.LEVELCOD = B.LEVELCOD
+              AND GROUP_ID = #{user_group_id}
+	</select>
+
+    <!-- 유저그룹정보를 갱신 한다 -->
+    <update id="doUpdateUserGroupInfo" parameterType="UserGroupInfo">
+	    UPDATE MGMT_SYSUSRGRP
+		       SET GROUP_NM 	= #{name},
+		           LEVELCOD 		= #{groupLevel},
+		           REMARK 			= #{remark},
+		           UPD_ID 			= #{crtUser},
+		           UPD_DT 			= now()
+		       WHERE GROUP_ID 	= #{code}
+	</update>
+
+
+    <!-- 유저그룹정보 리스트 갯수 취득 -->
+    <select id="getUserGroupInfoListCount" resultType="int">
+	    	SELECT COUNT(GROUP_ID)
+	    	  FROM MGMT_SYSUSRGRP
+	    	  WHERE 1=1 AND LEVELCOD <![CDATA[>=]]> (SELECT A.LEVELCOD FROM VW_MGMT_SYSUSRINFO A WHERE A.USER_ID = #{sessionLoginId} AND A.GROUP_ID = #{user_group_id})
+	</select>
+
+    <!-- 유저그룹정보 리스트  취득 -->
+    <select id="getUserGroupInfoList" resultMap="userGroupMap">
+		SELECT  GROUP_ID,
+		   		GROUP_NM,
+				LEVELCOD,
+				REMARK,
+				LEVELCODNM 
+		  FROM 
+		  ( 
+		  	  SELECT A.GROUP_ID,
+		   		     A.GROUP_NM,
+				     A.LEVELCOD,
+				     A.REMARK,				     
+				     (SELECT (CASE #{user_lang}
+				                   WHEN 'KOR' THEN B.CODENM_K
+				                   WHEN 'ENG' THEN B.CODENM_E
+				                   WHEN 'JPN' THEN B.CODENM_J
+				                   ELSE B.CODENM_K
+				                END)
+				          FROM MGMT_SYSCOD2T B
+				         WHERE GRCODE = 'P104' AND CODE = A.LEVELCOD
+				     ) AS LEVELCODNM 
+			  FROM MGMT_SYSUSRGRP AS A,
+        			VW_MGMT_GROUPLEVEL AS B
+			  WHERE 1=1 
+			  AND A.LEVELCOD = B.LEVELCOD
+			  AND A.LEVELCOD <![CDATA[>=]]> (SELECT V.LEVELCOD FROM VW_MGMT_SYSUSRINFO V WHERE V.USER_ID = #{sessionLoginId} AND V.GROUP_ID = #{user_group_id})
+			  ORDER BY A.LEVELCOD ASC, A.GROUP_ID ASC
+		 )  tb	     
+	</select>
+
+    <!-- 유저그룹정보를 삭제 한다 -->
+    <delete id="doDeleteUserGroupInfo">
+	    DELETE FROM MGMT_SYSUSRGRP
+    	WHERE GROUP_ID = #{groupId}
+	</delete>
+
+
+    <!-- 권한레벨 맵핑을 설정 -->
+    <resultMap id="userGroupmenuAuthMap" type="CodeInfo">
+        <result property="code" column="CODE"/>
+        <result property="name" column="CODENM_K"/>
+        <result property="codenm_k" column="CODENM_K"/>
+        <result property="codenm_e" column="CODENM_E"/>
+        <result property="codenm_j" column="CODENM_J"/>
+    </resultMap>
+
+    <!-- 권한레벨 정보  취득 -->
+    <select id="getAuthLevelListEmpGrp" resultMap="userGroupmenuAuthMap">
+		SELECT C.CODE , 
+				   C.CODENM_K,
+				   C.CODENM_E,
+				   C.CODENM_J          
+		  FROM VW_MGMT_GROUPLEVEL A, VW_MGMT_SYSUSRINFO B ,MGMT_SYSCOD2T C
+		  WHERE  1=1
+			AND   A.LEVELCOD = C.LEVELCOD
+			AND   C.GRCODE = 'P104'
+			AND   B.USER_ID   = #{id}
+			AND   C.CODE <![CDATA[>=]]> B.LEVELCOD
+		 ORDER BY A.LEVELCOD ASC	
+	</select>
+
+</mapper>
+ 	

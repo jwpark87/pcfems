@@ -1,0 +1,71 @@
+@CHARSET "UTF-8";
+
+.ui-jqgrid .ui-search-table .ui-search-input > input {
+    font-size: 12px;
+    color: #ff4200;
+    border: 1px solid #abadb3;
+    border-left: 1px solid #dbdfe6;
+    border-right: 1px solid #dbdfe6;
+    border-bottom: 1px solid #e3e9ef;
+    border-radius: 3px;
+    text-indent: 2px;
+    color: #ff4200;
+    width: 100%;
+}
+
+.ui-jqgrid .ui-search-table .ui-search-input > select {
+    font-size: 12px;
+    border: 1px solid #abadb3;
+    border-left: 1px solid #dbdfe6;
+    border-right: 1px solid #dbdfe6;
+    border-bottom: 1px solid #e3e9ef;
+    border-radius: 3px;
+    text-indent: 2px;
+    width: 100%;
+}
+
+td[role='gridcell'] {
+    text-overflow: ellipsis;
+}
+
+.ui-paging-pager .ui-state-hover {
+    border: none;
+}
+
+table.ui-jqgrid-btable > tbody > tr:hover {
+    color: #000 !important;
+}
+
+.ui-jqgrid .ui-search-table .ui-search-input > input, .ui-jqgrid .ui-search-table .ui-search-input > select {
+    height: 20px;
+}
+
+.ui-state-default, .ui-state-error, .ui-state-highlight {
+    position: initial;
+}
+
+.ui-jqgrid .ui-jqgrid-htable .ui-th-div {
+    margin-top: 0 !important;
+    height: 22px !important;
+}
+
+.ui-search-table select, .ui-search-table input {
+    padding: 0;
+    text-indent: 2px;
+}
+
+table.ui-paging-pager td.ui-pg-button:hover {
+    height: 25px;
+}
+
+table.ui-paging-pager td.ui-state-disabled {
+    padding: 0 5px !important;
+}
+
+.ui-jqgrid .ui-pg-selbox, .ui-jqgrid .ui-jqgrid-toppager .ui-pg-selbox {
+    border: 1px solid #abadb3;
+    border-left: 1px solid #dbdfe6;
+    border-right: 1px solid #dbdfe6;
+    border-bottom: 1px solid #e3e9ef;
+    border-radius: 3px;
+}

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.common.spring.basic">
+
+    <!-- 화면페이지별오브젝트명칭  매핑빈정의 -->
+    <resultMap id="objectMap" type="ObjectInfo">
+        <result property="pageId" column="PAGE_ID"/>
+        <result property="objectId" column="OBJECT_ID"/>
+        <result property="objectNm" column="OBJECT_NM"/>
+    </resultMap>
+    <!-- 화면별 오브젝트 사용권한 정보  매핑빈정의 -->
+    <resultMap id="accessMap" type="AccessInfo">
+        <result property="groupLevel" column="GROUP_LEVEL"/>
+        <result property="pageId" column="PAGE_ID"/>
+        <result property="objectId" column="OBJECT_ID"/>
+        <result property="enableYn" column="ENABLE_YN"/>
+        <result property="visibleYn" column="VISIBLE_YN"/>
+    </resultMap>
+
+    <!-- 페이지별메뉴매칭정보 정의 -->
+    <resultMap id="menuPageMap" type="MenuPageInfo">
+        <result property="pageId" column="PAGE_ID"/>
+        <result property="menuId" column="MENU_ID"/>
+        <!-- <result property="pageNm"  column="PAGE_NM"/> -->
+        <result property="page_nm_kor" column="PAGE_NM_KOR"/>
+        <result property="page_nm_eng" column="PAGE_NM_ENG"/>
+        <result property="page_nm_jpn" column="PAGE_NM_JPN"/>
+    </resultMap>
+
+    <!-- 화면페이지별오브젝트명칭정보를 취득한다 -->
+    <select id="doGetObjectInfo" resultMap="objectMap">
+	    SELECT PAGE_ID, OBJECT_ID, OBJECT_NM
+        FROM (
+            SELECT PAGE_ID             AS PAGE_ID
+                 , OBJECT_ID           AS OBJECT_ID
+                 , OBJECT_NM_KOR       AS OBJECT_NM
+            FROM MGMT_DOMAINMST
+            WHERE SUBSTR(#{p_src_env}, 1, 3) = 'KOR'
+            UNION ALL
+            SELECT PAGE_ID             AS PAGE_ID
+                 , OBJECT_ID           AS OBJECT_ID
+                 , OBJECT_NM_ENG       AS OBJECT_NM
+            FROM MGMT_DOMAINMST
+            WHERE SUBSTR(#{p_src_env}, 1, 3) = 'ENG'
+            UNION ALL
+            SELECT PAGE_ID             AS PAGE_ID
+                 , OBJECT_ID           AS OBJECT_ID
+                 , OBJECT_NM_JPN       AS OBJECT_NM
+            FROM MGMT_DOMAINMST
+            WHERE SUBSTR(#{p_src_env}, 1, 3) = 'JPN'
+        ) T
+	</select>
+
+    <!-- 화면탭정보  매핑빈정의 -->
+    <resultMap id="tabMap" type="TabInfo">
+        <result property="group_level" column="GROUP_LEVEL"/>
+        <result property="page_id" column="PAGE_ID"/>
+        <result property="mast_id" column="MAST_ID"/>
+        <result property="enable_yn" column="ENABLE_YN"/>
+        <result property="visible_yn" column="VISIBLE_YN"/>
+        <result property="page_nm_kor" column="PAGE_NM_KOR"/>
+        <result property="page_nm_eng" column="PAGE_NM_ENG"/>
+        <result property="page_nm_jpn" column="PAGE_NM_JPN"/>
+        <result property="onclick_func" column="ONCLICK_FUNC"/>
+        <result property="order_no" column="ORDER_NO"/>
+    </resultMap>
+    <!-- 화면탭정보정보를 취득한다 -->
+    <select id="doGetTabInfo" resultMap="tabMap">
+		     SELECT B.AUTH_CODE	AS GROUP_LEVEL
+             , A.PAGE_ID         		AS PAGE_ID
+             , A.MAST_ID          		AS MAST_ID
+             , A.ENABLE_YN      		AS ENABLE_YN
+             , A.VISIBLE_YN			AS VISIBLE_YN
+             , A.PAGE_NM_KOR		AS PAGE_NM_KOR
+             , A.PAGE_NM_ENG		AS PAGE_NM_ENG
+             , A.PAGE_NM_JPN		AS PAGE_NM_JPN
+             , A.ONCLICK_FUNC		AS ONCLICK_FUNC
+             , A.ORDER_NO				AS ORDER_NO
+        FROM MGMT_TABINFO A, VW_MGMT_GROUPLEVEL B
+        WHERE 1 = 1
+          AND A.LEVELCOD <![CDATA[>=]]> B.AUTH_CODE
+          AND A.USE_YN = 'Y'
+        ORDER BY B.AUTH_CODE, A.MAST_ID, A.ORDER_NO
+	</select>
+
+    <!-- 화면별 오브젝트 사용권한 정보값을 취득한다  -->
+    <select id="doGetAccessInfo" resultMap="accessMap">
+
+        SELECT B.AUTH_CODE AS GROUP_LEVEL
+        , A.PAGE_ID
+        , A.OBJECT_ID
+        , A.ENABLE_YN
+        , A.VISIBLE_YN
+        FROM MGMT_OBJACSINFO A, VW_MGMT_GROUPLEVEL B
+        WHERE 1 = 1
+        AND CONVERT(A.LEVELCOD, UNSIGNED)  <![CDATA[<=]]> CONVERT(B.AUTH_CODE, UNSIGNED)
+        AND CONVERT(B.AUTH_CODE, UNSIGNED) <![CDATA[<]]> (SELECT IFNULL(MIN(CONVERT(K.LEVELCOD, UNSIGNED)), CONVERT('999', UNSIGNED) + 1)
+        FROM MGMT_OBJACSINFO K
+        WHERE CONVERT(K.LEVELCOD, UNSIGNED) <![CDATA[>]]> CONVERT(A.LEVELCOD, UNSIGNED)
+        AND K.PAGE_ID = A.PAGE_ID
+        AND K.OBJECT_ID = A.OBJECT_ID
+        <!-- 데이타는 있지만, 권한레벨에서 지워진 경우, AUTHLEVEL 에 있으면서, 바로 상위의 값을 찾지 못하는 경우 발생.-->
+        AND EXISTS (SELECT 1 FROM VW_MGMT_GROUPLEVEL L WHERE L.AUTH_CODE = K.LEVELCOD)
+        )
+        <!-- 데이타는 있지만, 권한레벨에서 지워진 경우, AUTHLEVEL 에 있으면서, 바로 상위의 값을 찾지 못하는 경우 발생.-->
+        AND EXISTS (SELECT 1 FROM VW_MGMT_GROUPLEVEL L WHERE L.AUTH_CODE = A.LEVELCOD)
+        AND A.USE_YN = 'Y'
+    </select>
+
+
+    <!-- 시스템파라메터 정보값을 취득한다 -->
+    <select id="doGetParamInfo" resultType="ParamInfo">
+		SELECT 
+				proc_group
+			,	key_value
+			, 	config_desc
+			,	param_value
+			,	config_desc_kor
+			,	config_desc_eng
+		FROM 
+		COMM_CONFIG
+	</select>
+
+
+    <!-- 페이지별메뉴매칭정보를 취득한다 -->
+    <select id="doGetMenuPageInfo" resultMap="menuPageMap">
+        SELECT PAGE_ID AS PAGE_ID
+        , MENU_ID AS MENU_ID
+        ,PAGE_NM_KOR
+        ,PAGE_NM_ENG
+        ,PAGE_NM_JPN
+        <!-- , (CASE SUBSTR(#{p_src_env}, 1, 3) WHEN 'KOR' THEN PAGE_NM_KOR WHEN 'ENG' THEN PAGE_NM_ENG WHEN 'JPN' THEN PAGE_NM_JPN ELSE PAGE_NM_KOR END)  AS PAGE_NM -->
+        FROM MGMT_PAGEMST
+    </select>
+
+</mapper>

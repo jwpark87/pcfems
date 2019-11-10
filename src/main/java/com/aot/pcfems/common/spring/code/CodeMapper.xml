@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.aot.pcfems.common.spring.code">
+
+    <!-- 화면페이지별오브젝트명칭  매핑빈정의 -->
+    <!--     <resultMap id="groupCodeMap" type="GroupCodeInfo"> -->
+    <!--         <result property="groupLevel"  	column="GROUP_LEVEL"/> -->
+    <!--         <result property="group" 			column="GRCODE"/> -->
+    <!--         <result property="code"  			column="CODE"/>         -->
+    <!--         <result property="codenm"  	column="CODENM"/> -->
+    <!--         <result property="codenm_k"  	column="CODENM_K"/> -->
+    <!--         <result property="codenm_e"  	column="CODENM_E"/> -->
+    <!--         <result property="codenm_j"		column="CODENM_J"/> -->
+    <!--         <result property="modiYn"  		column="MODI_YN"/> -->
+    <!--         <result property="childGroup"  	column="CHILD_GRCODE"/> -->
+    <!--     </resultMap> -->
+
+    <!-- 코드데이타  매핑빈정의 -->
+    <!--     <resultMap id="groupUpCodeMap" type="GroupCodeInfo"> -->
+    <!--     	<result property="group"  column="GRCODE"/> -->
+    <!--         <result property="code"  column="CODE"/> -->
+    <!--         <result property="name"  column="CODENM"/> -->
+    <!--         <result property="upCode"  column="UPCODE"/> -->
+    <!--     </resultMap> -->
+
+    <!-- 기타마스터코드데이타  매핑빈정의 -->
+    <!--     <resultMap id="userGroupCodeMap" type="UserGroupInfo"> -->
+    <!--     	<result property="groupLevel"  column="LEVELCOD"/> -->
+    <!--         <result property="code"  column="GROUP_ID"/> -->
+    <!--         <result property="name"  column="GROUP_NM"/> -->
+    <!--         <result property="remark"  column="REMARK"/> -->
+    <!--     </resultMap> -->
+
+    <!-- 코드성 정보 리스트취득하여 객체에 매핑한다-->
+    <!--     <resultMap id="codeInfo" type="CodeInfo"> -->
+    <!--         <result property="code"  column="USER_ID"/> -->
+    <!--         <result property="name"  column="CODENM"/> -->
+    <!--     </resultMap> -->
+
+
+    <!-- 화면페이지별오브젝트명칭정보를 취득한다 -->
+    <!-- 	<select id="doGetGroupCodeInfo" resultMap="groupCodeMap"> -->
+    <!-- 			SELECT B.LEVELCOD		AS GROUP_LEVEL -->
+    <!--                   ,	A.GRCODE 			AS GRCODE -->
+    <!--                   ,	A.CODE				AS CODE -->
+    <!--                   , A.CODENM -->
+    <!--                   , A.CODENM_K -->
+    <!--                   , A.CODENM_E -->
+    <!--                   , A.CODENM_J -->
+    <!--                   , A.MODI_YN     AS MODI_YN -->
+    <!--                   ,A.CHILD_GRCODE                                                 AS CHILD_GRCODE -->
+    <!--             FROM MGMT_SYSCOD2T A, VW_MGMT_GROUPLEVEL B   -->
+    <!--             WHERE 1 = 1 -->
+    <!--               AND A.LEVELCOD <![CDATA[>=]]> B.LEVELCOD -->
+    <!--               AND A.USE_YN   = 'Y' -->
+    <!--             ORDER BY B.LEVELCOD, A.GRCODE, A.SORTSEQ;		 -->
+    <!-- 	</select> -->
+
+    <!-- 화면페이지별오브젝트명칭정보를 취득한다 -->
+    <!-- 	<select id="doGetUserGroupCodeInfo" resultMap="userGroupCodeMap"> -->
+    <!-- 	    SELECT A.LEVELCOD -->
+    <!--               ,A.GROUP_ID -->
+    <!--               ,A.GROUP_NM -->
+    <!--               ,A.REMARK -->
+    <!--         FROM MGMT_SYSUSRGRP A -->
+    <!--         WHERE 1 = 1 -->
+    <!--         ORDER BY A.LEVELCOD ASC, GROUP_ID ASC -->
+    <!-- 	</select> -->
+
+    <!-- 유저그룹/청구주기/(민원)대분류/(민원)중분류/(민원)소분류/상담유형/지역분류(고객정보관리 검색조건)/
+          서비스/가격정책/사업자/사업자별연관상품/제조사/장비모델/
+          약정유형/인증키유형 정보를 취득한다 -->
+    <!-- 	<select id="getUpCodeInfo" resultMap="groupUpCodeMap"> -->
+    <!-- 		SELECT GRCODE,  -->
+    <!-- 		       CODE,  -->
+    <!-- 		       CODENM,  -->
+    <!-- 		       UPCODE  -->
+    <!-- 		  FROM  -->
+    <!-- 		       (SELECT 'MGMTGROUP' GRCODE,  -->
+    <!-- 		              GROUP_ID CODE,  -->
+    <!-- 		              GROUP_NM CODENM,  -->
+    <!-- 		              '0' UPCODE  -->
+    <!-- 		         FROM MGMT_SYSUSRGRP A, VW_MGMT_GROUPLEVEL B -->
+    <!-- 		        WHERE A.LEVELCOD = B.AUTH_CODE -->
+    <!-- 		       ) T   -->
+    <!-- 	</select> -->
+
+    <!-- 특정 사용자그룹에 속한 사용자 리스트를 취득한다. -->
+    <!-- 	<select id="getGroupUser" resultMap="codeInfo"> -->
+    <!-- 		SELECT USER_ID, USER_NM CODENM -->
+    <!-- 		FROM VW_MGMT_SYSUSRINFO -->
+    <!-- 		WHERE GROUP_ID=#{value} ORDER BY USER_NM ASC -->
+    <!-- 	</select> -->
+
+    <select id="getCodeListByGrcode" resultType="codeInfo" parameterType="String">
+		SELECT *
+		FROM MGMT_SYSCOD2T
+		WHERE GRCODE = #{grcode, jdbcType=VARCHAR}
+		  AND USE_YN = 'Y'
+		ORDER BY SORTSEQ ASC
+	</select>
+
+    <select id="getAllCodeListByGrcode" resultType="codeInfo" parameterType="String">
+		SELECT *
+		FROM MGMT_SYSCOD2T
+		WHERE GRCODE = #{grcode, jdbcType=VARCHAR}
+		ORDER BY SORTSEQ ASC
+	</select>
+
+
+</mapper>
+
+

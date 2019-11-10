@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.routeset">
+
+    <!-- Routeset 존재 체크 -->
+    <select id="getRoutesetExist" resultType="String" parameterType="RoutesetInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_routeset_mst
+                      WHERE LOCALITY = #{locality} AND APC = #{apc}
+                      )
+	</select>
+
+    <!-- Routeset 설정정보 취득 -->
+    <select id="getRoutesetDetail" resultType="RoutesetInfo" parameterType="RoutesetInfo">
+        SELECT
+        <!-- FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY -->
+        A.LOCALITY
+        ,A.NA
+        ,A.APC
+        ,A.CLLI
+        ,A.COUNTRY
+        ,A.CARRIER_NM
+        ,A.LOCAL
+        ,A.STATUS
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM conf_routeset_mst A
+        WHERE A.LOCALITY = #{locality} AND A.APC = #{apc}
+    </select>
+
+    <!-- Routeset 설정정보를 갱신 한다 -->
+    <update id="updateRouteset" parameterType="RoutesetInfo">
+     UPDATE conf_routeset_mst
+         SET         	 
+         	NA					= #{na},
+         	CLLI 				= #{clli},
+         	COUNTRY		= #{country},
+         	CARRIER_NM 	= #{carrier_nm},
+         	LOCAL			= #{local},
+         	STATUS 			= #{status},
+            UPD_ID  			= #{upd_id},
+            UPD_DT  		= now()
+        WHERE LOCALITY = #{locality}
+        	AND APC			= #{apc}
+    </update>
+
+    <!-- Routeset 정보 리스트 갯수 취득 -->
+    <select id="getRoutesetInfoListCount" resultType="int" parameterType="RoutesetSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_routeset_mst A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test='srch_apc != "null" and srch_apc != null and srch_apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{srch_apc}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='local != "null" and local != null and local != ""'>
+            AND A.LOCAL LIKE CONCAT('%', #{local}, '%')
+        </if>
+        <if test='status != "null" and status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+    </select>
+
+
+    <!-- Routeset 정보 리스트  취득 -->
+    <select id="getRoutesetInfoList" resultType="RoutesetInfo" parameterType="RoutesetSearchInfo">
+        SELECT
+        FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY_NM
+        ,A.LOCALITY
+        ,A.NA
+        ,A.APC
+        ,A.CLLI
+        ,A.COUNTRY
+        ,A.CARRIER_NM
+        ,A.LOCAL
+        ,A.STATUS
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        conf_routeset_mst A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test='srch_apc != "null" and srch_apc != null and srch_apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{srch_apc}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='local != "null" and local != null and local != ""'>
+            AND A.LOCAL LIKE CONCAT('%', #{local}, '%')
+        </if>
+        <if test='status != "null" and status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertRouteset" parameterType="RoutesetInfo">
+        INSERT INTO conf_routeset_mst (
+               LOCALITY
+               ,NA
+               ,APC
+               ,CLLI
+               ,COUNTRY
+               ,CARRIER_NM
+               ,LOCAL
+         	   ,STATUS  
+               ,CRT_ID
+               ,CRT_DT
+               ,UPD_ID
+               ,UPD_DT
+               )
+        VALUES(
+	        	   #{locality}
+	        	   , #{na}
+	        	   , #{apc}
+	               , #{clli}
+	               , #{country}
+	               , #{carrier_nm}
+	               , #{local}
+	               , #{status}
+	               , #{crt_id}
+	               , now()
+	               , #{crt_id}
+	               , now() 
+	              )
+    </insert>
+
+    <!-- Routeset 정보를 삭제 한다 -->
+    <delete id="deleteRouteset" parameterType="RoutesetInfo">
+        DELETE FROM conf_routeset_mst WHERE LOCALITY = #{locality} AND APC = #{apc}     
+    </delete>
+
+</mapper>
+

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.alarminquiry.AlarmInquiryDAO">
+
+
+    <!-- CPU/MEM  사용율 현황 조회 정보 -->
+    <select id="getCurrCpuMemCnt" parameterType="AlarmInquiry" resultType="int">
+		SELECT COUNT(*)
+		  FROM emsm_curr_cpumem
+		  WHERE USE_YN = 'Y'
+	</select>
+
+    <select id="getCurrCpuMem" parameterType="AlarmInquiry" resultType="AlarmInquiry">
+		SELECT TGT_CD, TGT_NAME
+		         , USAGE_PER1, USAGE_PER2
+		         , USAGE_PER3, USAGE_PER4
+		         , USAGE_PER5, USAGE_PER6
+		         , USAGE_PER7, USAGE_PER8
+		         , USAGE_PER9, USAGE_PER10, USAGE_PER11
+		         , SORT_NO, USE_YN
+		  FROM emsm_curr_cpumem
+			WHERE USE_YN = 'Y'
+			ORDER BY
+					${jqSidx} ${jqSord}
+			LIMIT  #{startPageIndex} , #{endPageIndex}
+	</select>
+
+    <!-- 알람 조회 정보 -->
+    <select id="getCurrSnmpAlarmCnt" parameterType="AlarmInquiry" resultType="int">
+        SELECT COUNT(*)
+        FROM emsm_curr_snmpalarm ECS
+        LEFT OUTER JOIN COMM_ALARM_MST CAM ON ECS.ALM_CODE = CAM.ALM_CODE
+        <if test='@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "DRA" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "CPG" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "UDR" )'>
+            left outer join mgmt_syscod2t MS2 on 1=1
+        </if>
+        <where>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( alm_status, "CLEAR" )'>
+                AND ECS.ALM_CLEAR_DT IS NOT NULL
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( alm_status, "KNOW" )'>
+                AND ECS.ALM_KNOW_DT IS NOT NULL
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( alm_status, "HAPPEN" )'>
+                AND ECS.ALM_CLEAR_DT IS NULL AND ECS.ALM_KNOW_DT IS NULL
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( host_nm )'>
+                AND ECS.HOST_NM LIKE CONCAT('%', #{host_nm}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_code )'>
+                AND ECS.ALM_CODE LIKE CONCAT('%', #{alm_code}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_level )'>
+                AND ECS.ALM_LEVEL = #{alm_level}
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( sound_yn )'>
+                AND ECS.SOUND_YN = #{sound_yn}
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_msg )'>
+                AND ECS.ALM_MSG LIKE CONCAT('%', #{alm_msg}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_instance )'>
+                AND ECS.ALM_INSTANCE LIKE CONCAT('%', #{alm_instance}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "DRA" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "CPG" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "UDR" )'>
+                and ECS.ALM_CODE in ('71402', '71414')
+                and instr(ECS.ALM_MSG, MS2.code) <![CDATA[>]]> 0
+                and MS2.grcode = 'FQDN_${srch_alm_instance}'
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_instance ) and !@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "DRA" ) and !@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "CPG" ) and !@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "UDR" )'>
+                AND ECS.ALM_INSTANCE = #{srch_alm_instance, jdbcType=VARCHAR}
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_level )'>
+                AND ECS.ALM_LEVEL IN
+                <foreach item="ar_search_alm_level" index="index" collection="ar_search_alm_level" open="(" separator="," close=")">
+                    #{ar_search_alm_level}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getCurrSnmpAlarm" parameterType="AlarmInquiry" resultType="AlarmInquiry">
+        SELECT SEQNO,
+        CASE
+        WHEN ECS.ALM_CLEAR_DT IS NOT NULL THEN 'TERMINATE'
+        WHEN ECS.ALM_KNOW_DT IS NOT NULL THEN 'KNOW'
+        ELSE 'HAPPEN'
+        END
+        AS ALM_STATUS,
+        ECS.HOST_NM,
+        DATE_FORMAT(ECS.ALM_OCCUR_DT, '%Y-%m-%d %H:%i:%s')
+        AS ALM_OCCUR_DT,
+        DATE_FORMAT(ECS.ALM_KNOW_DT, '%Y-%m-%d %H:%i:%s')
+        AS ALM_KNOW_DT,
+        DATE_FORMAT(ECS.ALM_CLEAR_DT, '%Y-%m-%d %H:%i:%s')
+        AS ALM_CLEAR_DT,
+        ECS.ALM_CODE,
+        ECS.ALM_LEVEL,
+        ECS.ALM_MSG,
+        ECS.ALM_REMARK1,
+        ECS.ALM_CONFIRM_USER,
+        ECS.PROC_NM,
+        ECS.ALM_PID,
+        ECS.ALM_CATEGORY,
+        ECS.SOUND_YN,
+        ECS.OCCUR_CNT,
+        DATE_FORMAT(ECS.FIRST_OCCUR_DT, '%Y-%m-%d %H:%i:%s')
+        AS FIRST_OCCUR_DT,
+        DATE_FORMAT(ECS.ALM_CONFIRM_DT, '%Y-%m-%d %H:%i:%s')
+        AS ALM_CONFIRM_DT,
+        ECS.ALM_CATEGORY
+        AS ALM_GROUP,
+        ECS.ALM_INSTANCE,
+        CAM.ALM_RECOVERY
+        FROM emsm_curr_snmpalarm ECS
+        LEFT OUTER JOIN COMM_ALARM_MST CAM ON ECS.ALM_CODE = CAM.ALM_CODE
+        <if test='@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "DRA" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "CPG" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "UDR" )'>
+            left outer join mgmt_syscod2t MS2 on 1=1
+        </if>
+        <where>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( alm_status, "CLEAR" )'>
+                AND ECS.ALM_CLEAR_DT IS NOT NULL
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( alm_status, "KNOW" )'>
+                AND ECS.ALM_KNOW_DT IS NOT NULL
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( alm_status, "HAPPEN" )'>
+                AND ECS.ALM_CLEAR_DT IS NULL AND ECS.ALM_KNOW_DT IS NULL
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( host_nm )'>
+                AND ECS.HOST_NM LIKE CONCAT('%', #{host_nm}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_code )'>
+                AND ECS.ALM_CODE LIKE CONCAT('%', #{alm_code}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_level )'>
+                AND ECS.ALM_LEVEL = #{alm_level}
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( sound_yn )'>
+                AND ECS.SOUND_YN = #{sound_yn}
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_msg )'>
+                AND ECS.ALM_MSG LIKE CONCAT('%', #{alm_msg}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_instance )'>
+                AND ECS.ALM_INSTANCE LIKE CONCAT('%', #{alm_instance}, '%')
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "DRA" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "CPG" ) or @org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "UDR" )'>
+                and ECS.ALM_CODE in ('71402', '71414')
+                and instr(ECS.ALM_MSG, MS2.code) <![CDATA[>]]> 0
+                and MS2.grcode = 'FQDN_${srch_alm_instance}'
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_instance ) and !@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "DRA" ) and !@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "CPG" ) and !@org.apache.commons.lang3.StringUtils@equals( srch_alm_instance , "UDR" )'>
+                AND ECS.ALM_INSTANCE = #{srch_alm_instance, jdbcType=VARCHAR}
+            </if>
+            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_level )'>
+                AND ECS.ALM_LEVEL IN
+                <foreach item="ar_search_alm_level" index="index" collection="ar_search_alm_level" open="(" separator="," close=")">
+                    #{ar_search_alm_level}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        ECS.${jqSidx} ${jqSord}
+        LIMIT #{startPageIndex} , #{endPageIndex}
+    </select>
+
+    <select id="getCurrSnmpAlarmObjectBySeqno" parameterType="Integer" resultType="AlarmInquiry">
+        SELECT SEQNO
+        ,CASE WHEN ECS.ALM_CLEAR_DT IS NOT NULL THEN 'TERMINATE'
+        WHEN ECS.ALM_KNOW_DT IS NOT NULL THEN 'KNOW'
+        ELSE 'HAPPEN' END AS ALM_STATUS
+        , ECS.HOST_NM
+        , DATE_FORMAT(ECS.ALM_OCCUR_DT,'%Y-%m-%d %H:%i:%s') AS ALM_OCCUR_DT
+        , DATE_FORMAT(ECS.ALM_KNOW_DT,'%Y-%m-%d %H:%i:%s') AS ALM_KNOW_DT
+        , DATE_FORMAT(ECS.ALM_CLEAR_DT,'%Y-%m-%d %H:%i:%s') AS ALM_CLEAR_DT
+        , ECS.ALM_CODE
+        , ECS.ALM_LEVEL
+        , ECS.ALM_MSG
+        , ECS.ALM_REMARK1
+        , ECS.ALM_CONFIRM_USER
+        , ECS.PROC_NM
+        , ECS.ALM_PID
+        , ECS.ALM_CATEGORY
+        , ECS.SOUND_YN
+        , ECS.OCCUR_CNT
+        , DATE_FORMAT(ECS.FIRST_OCCUR_DT,'%Y-%m-%d %H:%i:%s') AS FIRST_OCCUR_DT
+        , DATE_FORMAT(ECS.ALM_CONFIRM_DT,'%Y-%m-%d %H:%i:%s') AS ALM_CONFIRM_DT
+        , ECS.ALM_CATEGORY AS ALM_GROUP
+        , ECS.ALM_INSTANCE
+        , CAM.ALM_RECOVERY
+        FROM EMSM_CURR_SNMPALARM ECS
+        LEFT OUTER JOIN COMM_ALARM_MST CAM ON ECS.ALM_CODE = CAM.ALM_CODE
+        <where>
+            AND ECS.SEQNO = #{seqno, jdbcType=INTEGER}
+        </where>
+    </select>
+
+    <!-- 장애 알람의 리스트를 취득  -->
+    <select id="getObstacleAlarmList" resultType="AlarmInquiry">
+		SELECT 
+		        A.SEQNO
+		       ,A.HOST_NM
+		       ,A.ALM_CATEGORY
+		       ,A.ALM_OCCUR_DT
+		       ,A.ALM_CODE
+		       ,A.ALM_MSG
+		       ,A.ALM_LEVEL
+		       ,A.ALM_CONFIRM_USER
+		       ,A.ALM_REMARK1
+		       ,A.ALM_CONFIRM_DT
+		       ,CASE WHEN A.ALM_LEVEL = 'CRI' THEN 4
+                      WHEN A.ALM_LEVEL = 'MAJ' THEN 3
+                      WHEN A.ALM_LEVEL = 'MIN' THEN 2
+                      WHEN A.ALM_LEVEL = 'WAN' THEN 1 END AS ALM_PRIORITY
+		   FROM EMSM_CURR_SNMPALARM A
+		  WHERE 1 = 1		  	  
+		  	  AND  ALM_CLEAR_DT IS NULL
+		  	  AND  ALM_KNOW_DT IS NULL
+		  	  AND  SOUND_YN = 'Y'
+		  ORDER BY ALM_PRIORITY
+	</select>
+
+    <!-- 알람 레벨 건수 -->
+    <select id="getSnmpAlarmAlmLevelNumber" resultType="AlarmInquiry">
+		SELECT 
+          	IFNULL(SUM(CASE WHEN A.ALM_LEVEL = 'CRI' THEN 1 ELSE 0 END),0) AS CRI_NUM
+        	,IFNULL(SUM(CASE WHEN A.ALM_LEVEL = 'MAJ' THEN 1 ELSE 0 END),0) AS MAJ_NUM
+        	,IFNULL(SUM(CASE WHEN A.ALM_LEVEL = 'MIN' THEN 1 ELSE 0 END),0) AS MIN_NUM
+        	,IFNULL(SUM(CASE WHEN A.ALM_LEVEL = 'WAN' THEN 1 ELSE 0 END),0) AS WAN_NUM		    
+		   FROM EMSM_CURR_SNMPALARM A		
+	</select>
+
+
+    <select id="updateObstacleAlarmMst" parameterType="AlarmInquiry" statementType="CALLABLE">
+        { CALL PRC_HANDLE_SNMPALARM  (
+        			  #{p_src_env,mode=IN,jdbcType=VARCHAR}
+                     , #{p_data_param,mode=IN,jdbcType=VARCHAR}
+                     , #{p_retcode,mode=OUT,jdbcType=INTEGER}
+                     , #{p_retmsg,mode=OUT,jdbcType=VARCHAR}
+                     ) }
+    </select>
+
+
+</mapper>
+ 	

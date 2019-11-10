@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.setting.country">
+
+    <!-- Prefix 존재 체크 -->
+    <select id="getPrefixExist" resultType="String" parameterType="String">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM COMM_COUNTRY_PREFIX CCP
+                      WHERE CCP.PREFIX = #{srchVal})
+	</select>
+
+    <!-- COUNTRY설정정보 매핑을 설정 -->
+    <resultMap id="sbcMap" type="CountryInfo">
+        <result property="prefix" column="PREFIX"/>
+        <result property="country_cd" column="COUNTRY_CD"/>
+        <result property="country_cd_name" column="COUNTRY_CD_NAME"/>
+        <result property="remark1" column="REMARK1"/>
+        <result property="upd_id" column="UPD_ID"/>
+        <result property="upd_id_name" column="UPD_ID_NAME"/>
+        <result property="upd_dt" column="UPD_DT"/>
+    </resultMap>
+    <!-- COUNTRY설정정보 취득 -->
+    <select id="getCountryDetail" resultMap="sbcMap" parameterType="CountryInfo">
+         SELECT
+             A.PREFIX
+            ,A.COUNTRY_CD
+            ,FNC_GET_GRCODE_NAME_EX("COUNTRY_CD", COUNTRY_CD, #{user_lang}) COUNTRY_CD_NAME
+            ,A.REMARK1
+            ,A.UPD_ID
+            ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID_NAME
+            ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+         FROM COMM_COUNTRY_PREFIX A
+         WHERE A.PREFIX = #{prefix}
+         
+    </select>
+
+    <!-- COUNTRY설정정보를 갱신 한다 -->
+    <update id="doUpdateCountryInfo" parameterType="CountryInfo">
+     UPDATE COMM_COUNTRY_PREFIX
+         SET
+           COUNTRY_CD = #{country_cd},
+           REMARK1 = #{remark1},
+           UPD_ID  = #{upd_id},
+           UPD_DT  = now()
+        WHERE PREFIX = #{prefix}
+    </update>
+
+    <!-- COUNTRY설정정보 리스트 갯수 취득 -->
+    <select id="getCountryInfoListCount" resultType="int" parameterType="CountrySearchInfo">
+        SELECT COUNT(1)
+        FROM COMM_COUNTRY_PREFIX A
+        WHERE 1=1
+        <if test='srch_prefix  != "null" and srch_prefix != null and srch_prefix != ""'>
+            AND A.PREFIX LIKE CONCAT('%', #{srch_prefix}, '%')
+        </if>
+        <if test='srch_country_cd  != "null" and srch_country_cd != null and srch_country_cd != ""'>
+            AND A.COUNTRY_CD LIKE CONCAT('%', #{srch_country_cd}, '%')
+        </if>
+        <if test='srch_country_cd_name  != "null" and srch_country_cd_name != null and srch_country_cd_name != ""'>
+            AND FNC_GET_GRCODE_NAME_EX("COUNTRY_CD", A.COUNTRY_CD, #{user_lang}) LIKE CONCAT('%', #{srch_country_cd_name}, '%')
+        </if>
+    </select>
+
+    <!-- COUNTRY설정정보리스트 매핑을 설정  -->
+    <resultMap id="sbcListMap" type="CountryInfo">
+        <result property="prefix" column="PREFIX"/>
+        <result property="country_cd" column="COUNTRY_CD"/>
+        <result property="country_cd_name" column="COUNTRY_CD_NAME"/>
+        <result property="remark1" column="REMARK1"/>
+        <result property="upd_id" column="UPD_ID"/>
+        <result property="upd_id_name" column="UPD_ID_NAME"/>
+        <result property="upd_dt" column="UPD_DT"/>
+    </resultMap>
+    <!-- COUNTRY설정정보 리스트  취득 -->
+    <select id="getCountryInfoList" resultMap="sbcListMap" parameterType="CountrySearchInfo">
+        SELECT
+        A.PREFIX
+        ,A.COUNTRY_CD
+        ,FNC_GET_GRCODE_NAME_EX("COUNTRY_CD", A.COUNTRY_CD, #{user_lang}) COUNTRY_CD_NAME
+        ,A.REMARK1
+        ,A.UPD_ID
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID_NAME
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        COMM_COUNTRY_PREFIX A
+        WHERE 1=1
+        <if test='srch_prefix  != "null" and srch_prefix != null and srch_prefix != ""'>
+            AND A.PREFIX LIKE CONCAT('%', #{srch_prefix}, '%')
+        </if>
+        <if test='srch_country_cd  != "null" and srch_country_cd != null and srch_country_cd != ""'>
+            AND A.COUNTRY_CD LIKE CONCAT('%', #{srch_country_cd}, '%')
+        </if>
+        <if test='srch_country_cd_name  != "null" and srch_country_cd_name != null and srch_country_cd_name != ""'>
+            AND FNC_GET_GRCODE_NAME_EX("COUNTRY_CD", A.COUNTRY_CD, #{user_lang}) LIKE CONCAT('%', #{srch_country_cd_name}, '%')
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="doInsertCountryInfo" parameterType="CountryInfo">
+        INSERT INTO COMM_COUNTRY_PREFIX (
+                PREFIX
+               ,COUNTRY_CD
+               ,REMARK1
+               ,CRT_ID
+               ,CRT_DT
+               ,UPD_ID
+               ,UPD_DT
+               )
+        VALUES(#{prefix}
+               ,#{country_cd}
+               ,#{remark1}
+               ,#{crt_id}
+               ,now()
+               ,#{crt_id}
+               ,now() )
+    </insert>
+
+    <!-- COUNTRY설정정보를 삭제 한다 -->
+    <delete id="doDeleteCountryInfo">
+        DELETE FROM COMM_COUNTRY_PREFIX WHERE PREFIX = #{prefix}     
+    </delete>
+
+</mapper>
+

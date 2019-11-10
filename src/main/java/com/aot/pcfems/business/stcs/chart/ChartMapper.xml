@@ -1,0 +1,1401 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.stcs.chart">
+
+    <resultMap id="RealmMap" type="CodeInfo">
+        <result property="code" column="CODE"/>
+        <result property="codenm_k" column="CODENM_KOR"/>
+        <result property="codenm_e" column="CODENM_ENG"/>
+        <result property="codenm_j" column="CODENM_JPN"/>
+    </resultMap>
+    <!-- Realm설정정보 리스트  취득 -->
+    <select id="getRealmCodeList" resultMap="RealmMap" parameterType="ChartSearchInfo">
+		SELECT
+             A.REALM CODE
+   	        ,A.REALM_CARRIER_NAME CODENM_KOR
+   	        ,A.REALM_CARRIER_NAME CODENM_ENG
+   	        ,A.REALM_CARRIER_NAME CODENM_JPN
+		FROM 
+             COMM_REALM_CARRIER A
+		WHERE 1=1
+          ORDER BY CODENM_${user_lang}
+	</select>
+
+    <!-- 호처리 통계 갯수 취득 -->
+    <select id="getChartCallProcessListCnt" resultType="int" parameterType="ChartSearchInfo">
+        SELECT
+        COUNT(*) + 1
+        FROM (
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END AS STCS_DT
+        <!-- ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-' END AS FROM_COUNTRY_CD
+               ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-' END AS TO_COUNTRY_CD -->
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END AS ACME_SESSION_INGRESS_REALM
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END AS ACME_SESSION_EGRESS_REALM
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.CONN_CALL_CNT) AS CONN_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        ,IF(SUM(A.TRY_CALL_CNT) = 0,0,ROUND((SUM(A.COMP_CALL_CNT)/SUM(TRY_CALL_CNT))*100,2)) AS PERCENT_COMP_CALL
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <!-- <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+          AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+          AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if> -->
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END
+
+        <!-- , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-' END
+               , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-' END -->
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END
+        ) AS A
+    </select>
+
+    <!-- 호처리 통계 리스트  취득 -->
+    <select id="getChartCallProcessList" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계' ELSE A.STCS_DT END AS OCCUR_DT
+        , CASE WHEN T.NO = 1 THEN '-' ELSE MS_INGRESS_REALM.REALM_CARRIER_NAME END AS INGRESS_REALM_NAME
+        , CASE WHEN T.NO = 1 THEN '-' ELSE MS_EGRESS_REALM.REALM_CARRIER_NAME END AS EGRESS_REALM_NAME
+        , SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        , SUM(A.CONN_CALL_CNT) AS CONN_CALL_CNT
+        , SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        , IF(SUM(A.TRY_CALL_CNT) = 0,0,ROUND((SUM(A.COMP_CALL_CNT)/SUM(TRY_CALL_CNT))*100,2)) AS PERCENT_COMP_CALL
+
+        , A.ACME_CALLING_PACKETS_FS1 AS ACME_CALLING_PACKETS_FS1
+        , A.ACME_CALLING_OCTETS_FS1 AS ACME_CALLING_OCTETS_FS1
+        , A.ACME_CALLED_PACKETS_FS1 AS ACME_CALLED_PACKETS_FS1
+        , A.ACME_CALLED_OCTETS_FS1 AS ACME_CALLED_OCTETS_FS1
+        FROM (
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END AS STCS_DT
+        <!-- ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-' END AS FROM_COUNTRY_CD
+               ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-' END AS TO_COUNTRY_CD -->
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END AS ACME_SESSION_INGRESS_REALM
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END AS ACME_SESSION_EGRESS_REALM
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.CONN_CALL_CNT) AS CONN_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        ,IF(SUM(A.TRY_CALL_CNT) = 0,0,ROUND((SUM(A.COMP_CALL_CNT)/SUM(TRY_CALL_CNT))*100,2)) AS PERCENT_COMP_CALL
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <!-- <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+          AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+          AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if> -->
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END
+
+        <!-- , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-' END
+               , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-' END -->
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END
+        ) AS A
+        <!-- LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_FROM_COUNTRY_CD
+                            ON MS_FROM_COUNTRY_CD.GRCODE = "COUNTRY_CD"
+                            AND L.FROM_COUNTRY_CD = MS_FROM_COUNTRY_CD.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_TO_COUNTRY_CD
+                           ON MS_TO_COUNTRY_CD.GRCODE = "COUNTRY_CD"
+                            AND L.TO_COUNTRY_CD = MS_TO_COUNTRY_CD.CODE -->
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_INGRESS_REALM
+        ON A.ACME_SESSION_INGRESS_REALM = MS_INGRESS_REALM.REALM
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_EGRESS_REALM
+        ON A.ACME_SESSION_EGRESS_REALM = MS_EGRESS_REALM.REALM
+        ,COPY_T T
+        WHERE T.NO  <![CDATA[<=]]> 2
+        group by T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' else STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_EGRESS_REALM END
+        order by T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' else STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_EGRESS_REALM END
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <!-- 하단 차트 데이타 취득 -->
+    <select id="getCallGraph" parameterType="ChartSearchInfo" resultType="ChartInfo">
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:%iZ')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%iZ')/30)*30, 2, '0'),'Z')
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:00Z')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m')
+        ELSE '' END
+        AS STCS_DT
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.CONN_CALL_CNT) AS CONN_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+            AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+            AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if>
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY STCS_DT
+    </select>
+
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+
+
+    <!-- ASR 보고서 리스트  취득 -->
+    <select id="getChartAsrList" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계' ELSE A.STCS_DT END AS OCCUR_DT
+        , CASE WHEN T.NO = 1 THEN '-' ELSE MS_INGRESS_REALM.REALM_CARRIER_NAME END AS INGRESS_REALM_NAME
+        , CASE WHEN T.NO = 1 THEN '-' ELSE MS_EGRESS_REALM.REALM_CARRIER_NAME END AS EGRESS_REALM_NAME
+
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,(SUM(A.TRY_CALL_CNT) - SUM(A.COMP_CALL_CNT)) AS NOT_COMP_CALL_CNT <!-- 비완료호 -->
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        ,IF(SUM(A.TRY_CALL_CNT) = 0,0,ROUND((SUM(A.COMP_CALL_CNT)/SUM(TRY_CALL_CNT))*100,2)) AS PERCENT_COMP_CALL
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACCT_SESSION_TIME) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_USE_TIME  <!-- 평균사용시간 -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_POST_DIAL_DELAY) / SUM(A.COMP_CALL_CNT) ,2)) AS AVG_PDD      <!-- 평균PDD -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_R_FACTOR <!-- 평균 CALLING R-FACTOR  -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_R_FACTOR <!-- 평균 CALLED R-FACTOR  -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_RTP_PACKETS_LOST_FS1 <!-- 평균 CALLING Packet Loss -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_RTP_PACKETS_LOST_FS1 <!-- 평균 CALLED Packet Loss  -->
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM (
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END AS STCS_DT
+        <!-- ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-'  END AS FROM_COUNTRY_CD
+        ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-'  END AS TO_COUNTRY_CD -->
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END AS ACME_SESSION_INGRESS_REALM
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END AS ACME_SESSION_EGRESS_REALM
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        ,SUM(A.ACCT_SESSION_TIME) AS ACCT_SESSION_TIME
+        ,SUM(A.ACME_POST_DIAL_DELAY) AS ACME_POST_DIAL_DELAY
+        ,SUM(A.ACME_CALLING_R_FACTOR) AS ACME_CALLING_R_FACTOR
+        ,SUM(A.ACME_CALLED_R_FACTOR) AS ACME_CALLED_R_FACTOR
+        ,SUM(A.ACME_CALLING_RTP_PACKETS_LOST_FS1) AS ACME_CALLING_RTP_PACKETS_LOST_FS1
+        ,SUM(A.ACME_CALLED_RTP_PACKETS_LOST_FS1) AS ACME_CALLED_RTP_PACKETS_LOST_FS1
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <!-- <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+          AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+          AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if> -->
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END
+        <!--  , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-'  END
+         , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-'  END -->
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END
+        ) AS A
+        <!-- LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_FROM_COUNTRY_CD
+                           ON MS_FROM_COUNTRY_CD.GRCODE 	= "COUNTRY_CD"
+                          AND L.FROM_COUNTRY_CD 					= MS_FROM_COUNTRY_CD.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_TO_COUNTRY_CD
+                           ON MS_TO_COUNTRY_CD.GRCODE 		= "COUNTRY_CD"
+                          AND L.TO_COUNTRY_CD 						= MS_TO_COUNTRY_CD.CODE -->
+
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_INGRESS_REALM
+        ON A.ACME_SESSION_INGRESS_REALM = MS_INGRESS_REALM.REALM
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_EGRESS_REALM
+        ON A.ACME_SESSION_EGRESS_REALM = MS_EGRESS_REALM.REALM
+        ,COPY_T T
+        WHERE T.NO  <![CDATA[<=]]> 2
+        GROUP BY T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' else STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_EGRESS_REALM END
+        order by T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' else STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' else ACME_SESSION_EGRESS_REALM END
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <!-- ASR 보고서 데이타 취득 -->
+    <select id="getAsrGraph" parameterType="ChartSearchInfo" resultType="ChartInfo">
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:%iZ')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%iZ')/30)*30, 2, '0'),'Z')
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:00Z')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m')
+        ELSE '' END
+        AS STCS_DT
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACCT_SESSION_TIME) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_USE_TIME
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_POST_DIAL_DELAY) / SUM(A.COMP_CALL_CNT) ,2) ) AS AVG_PDD
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_R_FACTOR
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_R_FACTOR
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_RTP_PACKETS_LOST_FS1
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_RTP_PACKETS_LOST_FS1
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+            AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+            AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if>
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY STCS_DT
+    </select>
+
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+
+
+    <!-- NER 보고서 리스트  취득 -->
+    <select id="getChartNerList" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계' ELSE A.STCS_DT END AS OCCUR_DT
+        , CASE WHEN T.NO = 1 THEN '-' ELSE MS_INGRESS_REALM.REALM_CARRIER_NAME END AS INGRESS_REALM_NAME
+        , CASE WHEN T.NO = 1 THEN '-' ELSE MS_EGRESS_REALM.REALM_CARRIER_NAME END AS EGRESS_REALM_NAME
+
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,(SUM(A.TRY_CALL_CNT) - SUM(A.COMP_CALL_CNT)) AS FAIL_CALL_CNT <!-- 총실패호 -->
+        ,SUM(A.ACCT_SESSION_TIME) AS ACCT_SESSION_TIME <!-- 총통화시간 -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACCT_SESSION_TIME) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALL_TIME  <!-- 평균통화시간 -->
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_POST_DIAL_DELAY) / SUM(A.COMP_CALL_CNT) ,2)) AS AVG_PDD      <!-- 평균PDD -->
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM (
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END AS STCS_DT
+        <!--	,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-'  END AS FROM_COUNTRY_CD
+                ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-'  END AS TO_COUNTRY_CD -->
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END AS ACME_SESSION_INGRESS_REALM
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END AS ACME_SESSION_EGRESS_REALM
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        ,SUM(A.ACCT_SESSION_TIME) AS ACCT_SESSION_TIME <!-- 총통화시간 -->
+        ,SUM(A.ACME_POST_DIAL_DELAY) AS ACME_POST_DIAL_DELAY
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <!-- <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+          AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+          AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if> -->
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END
+        <!-- 	, CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-'  END
+                , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-'  END -->
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END
+        ) AS A
+        <!-- LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_FROM_COUNTRY_CD
+                           ON MS_FROM_COUNTRY_CD.GRCODE 	= "COUNTRY_CD"
+                          AND L.FROM_COUNTRY_CD 					= MS_FROM_COUNTRY_CD.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_TO_COUNTRY_CD
+                           ON MS_TO_COUNTRY_CD.GRCODE 		= "COUNTRY_CD"
+                          AND L.TO_COUNTRY_CD 						= MS_TO_COUNTRY_CD.CODE -->
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_INGRESS_REALM
+        ON A.ACME_SESSION_INGRESS_REALM = MS_INGRESS_REALM.REALM
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_EGRESS_REALM
+        ON A.ACME_SESSION_EGRESS_REALM = MS_EGRESS_REALM.REALM
+        ,COPY_T T
+        WHERE T.NO  <![CDATA[<=]]> 2
+        GROUP BY T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' ELSE STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_EGRESS_REALM END
+        order by T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' ELSE STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_EGRESS_REALM END
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <!-- NER 보고서 차트 데이타 취득 -->
+    <select id="getNerGraph" parameterType="ChartSearchInfo" resultType="ChartInfo">
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:%iZ')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%iZ')/30)*30, 2, '0'),'Z')
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:00Z')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m')
+        ELSE '' END
+        AS STCS_DT
+        ,SUM(A.ACCT_SESSION_TIME) AS ACCT_SESSION_TIME
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACCT_SESSION_TIME) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALL_TIME
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_POST_DIAL_DELAY) / SUM(A.COMP_CALL_CNT) ,2)) AS AVG_PDD
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+            AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+            AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if>
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY STCS_DT
+    </select>
+
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+
+    <!-- QOS 보고서 리스트  취득 -->
+    <select id="getChartQosList" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계' ELSE A.STCS_DT END AS OCCUR_DT
+        ,CASE WHEN T.NO = 1 THEN '-' ELSE MS_INGRESS_REALM.REALM_CARRIER_NAME END AS INGRESS_REALM_NAME
+        ,CASE WHEN T.NO = 1 THEN '-' ELSE MS_EGRESS_REALM.REALM_CARRIER_NAME END AS EGRESS_REALM_NAME
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.CONN_CALL_CNT) AS CONN_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_POST_DIAL_DELAY) / SUM(A.COMP_CALL_CNT) ,2)) AS AVG_PDD      <!-- 평균PDD -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACCT_SESSION_TIME) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALL_TIME  <!-- 평균통화시간 -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_RTP_AVG_JITTER_FS1)/SUM(COMP_CALL_CNT), 2)) AS AVG_CALLING_JITTER <!-- 평균 Calling Jitter -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_RTP_AVG_JITTER_FS1)/SUM(COMP_CALL_CNT), 2)) AS AVG_CALLED_JITTER <!-- 평균 Called Jitter -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_R_FACTOR <!-- 평균 CALLING R-FACTOR  -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_R_FACTOR <!-- 평균 CALLED R-FACTOR  -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_RTP_PACKETS_LOST_FS1 <!-- 평균 CALLING Packet Loss -->
+        ,IF(SUM(COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_RTP_PACKETS_LOST_FS1 <!-- 평균 CALLED Packet Loss  -->
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM (
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END AS STCS_DT
+        <!-- 	,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-'  END AS FROM_COUNTRY_CD
+                ,CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-'  END AS TO_COUNTRY_CD -->
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END AS ACME_SESSION_INGRESS_REALM
+        ,CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END AS ACME_SESSION_EGRESS_REALM
+        ,SUM(A.TRY_CALL_CNT) AS TRY_CALL_CNT
+        ,SUM(A.CONN_CALL_CNT) AS CONN_CALL_CNT
+        ,SUM(A.COMP_CALL_CNT) AS COMP_CALL_CNT
+        ,SUM(A.ACME_POST_DIAL_DELAY) AS ACME_POST_DIAL_DELAY
+        ,SUM(A.ACCT_SESSION_TIME) AS ACCT_SESSION_TIME
+        ,SUM(A.ACME_CALLING_RTP_AVG_JITTER_FS1) AS ACME_CALLING_RTP_AVG_JITTER_FS1
+        ,SUM(A.ACME_CALLED_RTP_AVG_JITTER_FS1) AS ACME_CALLED_RTP_AVG_JITTER_FS1
+        ,SUM(A.ACME_CALLING_R_FACTOR) AS ACME_CALLING_R_FACTOR
+        ,SUM(A.ACME_CALLED_R_FACTOR) AS ACME_CALLED_R_FACTOR
+        ,SUM(A.ACME_CALLING_RTP_PACKETS_LOST_FS1) AS ACME_CALLING_RTP_PACKETS_LOST_FS1
+        ,SUM(A.ACME_CALLED_RTP_PACKETS_LOST_FS1) AS ACME_CALLED_RTP_PACKETS_LOST_FS1
+        ,SUM(A.ACME_CALLING_PACKETS_FS1) AS ACME_CALLING_PACKETS_FS1
+        ,SUM(A.ACME_CALLING_OCTETS_FS1) AS ACME_CALLING_OCTETS_FS1
+        ,SUM(A.ACME_CALLED_PACKETS_FS1) AS ACME_CALLED_PACKETS_FS1
+        ,SUM(A.ACME_CALLED_OCTETS_FS1) AS ACME_CALLED_OCTETS_FS1
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <!-- <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+          AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+          AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if> -->
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m') END
+        <!-- , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.FROM_COUNTRY_CD ELSE '-'  END
+                , CASE WHEN #{srch_stcs_country} = 'Y' THEN A.TO_COUNTRY_CD ELSE '-'  END -->
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_INGRESS_REALM ELSE '-' END
+        , CASE WHEN #{srch_stcs_realm} = 'Y' THEN A.ACME_SESSION_EGRESS_REALM ELSE '-' END
+        ) AS A
+        <!-- LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_FROM_COUNTRY_CD
+                           ON MS_FROM_COUNTRY_CD.GRCODE 	= "COUNTRY_CD"
+                          AND L.FROM_COUNTRY_CD 					= MS_FROM_COUNTRY_CD.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T AS MS_TO_COUNTRY_CD
+                           ON MS_TO_COUNTRY_CD.GRCODE 		= "COUNTRY_CD"
+                          AND L.TO_COUNTRY_CD 						= MS_TO_COUNTRY_CD.CODE -->
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_INGRESS_REALM
+        ON A.ACME_SESSION_INGRESS_REALM = MS_INGRESS_REALM.REALM
+        LEFT OUTER JOIN COMM_REALM_CARRIER AS MS_EGRESS_REALM
+        ON A.ACME_SESSION_EGRESS_REALM = MS_EGRESS_REALM.REALM
+        ,COPY_T T
+        WHERE T.NO  <![CDATA[<=]]> 2
+        GROUP BY T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' ELSE STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_EGRESS_REALM END
+        ORDER BY T.NO
+        , CASE WHEN T.NO = 1 THEN '합계' ELSE STCS_DT END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_INGRESS_REALM END
+        , CASE WHEN T.NO = 1 THEN '-' ELSE ACME_SESSION_EGRESS_REALM END
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <!-- Qos 보고서 데이타 취득 -->
+    <select id="getQosGraph" parameterType="ChartSearchInfo" resultType="ChartInfo">
+        SELECT
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:%iZ')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:'), LPAD(FLOOR(DATE_FORMAT(A.OCCUR_DT,'%iZ')/30)*30, 2, '0'),'Z')
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%dT%H:00Z')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.OCCUR_DT,'%Y-%m')
+        ELSE '' END
+        AS STCS_DT
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_POST_DIAL_DELAY) / SUM(A.COMP_CALL_CNT) ,2)) AS AVG_PDD
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACCT_SESSION_TIME) / SUM(A.COMP_CALL_CNT), 2) ) AS AVG_CALL_TIME
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_RTP_AVG_JITTER_FS1)/SUM(COMP_CALL_CNT), 2)) AS AVG_CALLING_JITTER
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_RTP_AVG_JITTER_FS1)/SUM(COMP_CALL_CNT), 2)) AS AVG_CALLED_JITTER
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_R_FACTOR
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_R_FACTOR) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_R_FACTOR
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLING_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLING_RTP_PACKETS_LOST_FS1
+        ,IF(SUM(A.COMP_CALL_CNT) = 0,0,ROUND(SUM(A.ACME_CALLED_RTP_PACKETS_LOST_FS1) / SUM(A.COMP_CALL_CNT), 2)) AS AVG_CALLED_RTP_PACKETS_LOST_FS1
+
+        FROM STCS_TRAFFIC_5MIN A
+        WHERE 1=1
+        AND A.OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        <if test='srch_from_country_cd  != "null" and srch_from_country_cd != null and srch_from_country_cd != ""'>
+            AND A.FROM_COUNTRY_CD = #{srch_from_country_cd}
+        </if>
+        <if test='srch_to_country_cd  != "null" and srch_to_country_cd != null and srch_to_country_cd != ""'>
+            AND A.TO_COUNTRY_CD = #{srch_to_country_cd}
+        </if>
+        <if test='srch_acme_session_ingress_realm  != "null" and srch_acme_session_ingress_realm != null and srch_acme_session_ingress_realm != ""'>
+            AND A.ACME_SESSION_INGRESS_REALM = #{srch_acme_session_ingress_realm}
+        </if>
+        <if test='srch_acme_session_egress_realm  != "null" and srch_acme_session_egress_realm != null and srch_acme_session_egress_realm != ""'>
+            AND A.ACME_SESSION_EGRESS_REALM = #{srch_acme_session_egress_realm}
+        </if>
+        GROUP BY STCS_DT
+    </select>
+
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+
+    <select id="getPeerStatisticCnt" resultType="int" parameterType="ChartSearchInfo">
+        SELECT
+        COUNT(*)
+        FROM (
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END)
+        END AS STCS_DT
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END AS LOCALITY
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.COUNTRY_NM) END AS COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.CARRIER_NM) END AS CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.LOCAL) END AS LOCAL
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.REALM) END AS REALM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_HOST END AS HOST
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.COUNTRY_NM) END AS DST_COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.CARRIER_NM) END AS DST_CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.LOCAL) END AS DST_LOCAL
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.REALM) END AS DST_REALM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_HOST END AS DST_HOST
+
+        , SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        , A.IN_OCCUR_CNT / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS IN_TPS
+        , SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        , SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        , (SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) AS IN_FAIL_CNT
+        , (SUM(A.IN_SUCC_CNT) / SUM(A.IN_OCCUR_CNT)) *100 AS IN_SUCC_PERCENT
+        , ((SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) / SUM(A.IN_OCCUR_CNT)) *100 AS IN_FAIL_PERCENT
+        , SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        , SUM(A.OUT_OCCUR_CNT) / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS OUT_TPS
+        , SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        , SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        , SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT) AS OUT_FAIL_CNT
+        , (SUM(A.OUT_SUCC_CNT) / SUM(A.OUT_OCCUR_CNT)) *100 AS OUT_SUCC_PERCENT
+        , ((SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT)) / SUM(A.OUT_OCCUR_CNT)) *100 AS OUT_FAIL_PERCENT
+        <!-- FROM STCS_DIAMETER_5MIN A , CONF_DIAMETER_PEER B, COPY_T T
+      WHERE A.HOST = B.HOST  -->
+        FROM STCS_DIAMETER_PEER A
+        LEFT OUTER JOIN CONF_DIAMETER_PEER B
+        ON A.SRC_HOST = B.HOST
+        AND A.LOCALITY = B.LOCALITY
+        LEFT OUTER JOIN CONF_DIAMETER_PEER C
+        ON A.DST_HOST = C.HOST
+        AND A.LOCALITY = C.LOCALITY
+        JOIN COPY_T T
+        WHERE 1=1
+        AND T.NO  <![CDATA[<=]]> 2
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_host != null and srch_host!= ""'>
+            AND A.SRC_HOST LIKE CONCAT('%', #{srch_host}, '%')
+        </if>
+        <if test=' srch_country != null and srch_country != ""'>
+            AND B.COUNTRY_NM LIKE CONCAT('%', #{srch_country}, '%')
+        </if>
+        <if test=' srch_realm != null and srch_realm!= ""'>
+            AND B.REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+        <if test=' srch_dst_host != null and srch_dst_host!= ""'>
+            AND A.DST_HOST LIKE CONCAT('%', #{srch_dst_host}, '%')
+        </if>
+        <if test=' srch_dst_country != null and srch_dst_country != ""'>
+            AND C.COUNTRY_NM LIKE CONCAT('%', #{srch_dst_country}, '%')
+        </if>
+        <if test=' srch_dst_realm != null and srch_dst_realm!= ""'>
+            AND C.REALM LIKE CONCAT('%', #{srch_dst_realm}, '%')
+        </if>
+
+        GROUP BY T.NO,
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END
+        ) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_HOST END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_HOST END
+        ) AS L
+    </select>
+
+    <!-- Host 별 통계 리스트  취득 -->
+    <select id="getPeerStatistic" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        L.OCCUR_DT
+        , L.LOCALITY
+        , L.COUNTRY_NM
+        , L.CARRIER_NM
+        , L.LOCAL
+        , L.REALM
+        , L.HOST
+
+        , L.DST_COUNTRY_NM
+        , L.DST_CARRIER_NM
+        , L.DST_LOCAL
+        , L.DST_REALM
+        , L.DST_HOST
+
+        , L.IN_OCCUR_CNT
+        , L.IN_TPS
+        , L.IN_PKT_SIZE
+        , L.IN_SUCC_CNT
+        , L.IN_FAIL_CNT
+        , L.IN_SUCC_PERCENT
+        , L.IN_FAIL_PERCENT
+        , L.OUT_OCCUR_CNT
+        , L.OUT_TPS
+        , L.OUT_PKT_SIZE
+        , L.OUT_SUCC_CNT
+        , L.OUT_FAIL_CNT
+        , L.OUT_SUCC_PERCENT
+        , L.OUT_FAIL_PERCENT
+        FROM (
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END)
+        END AS OCCUR_DT
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END AS LOCALITY
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.COUNTRY_NM) END AS COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.CARRIER_NM) END AS CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.LOCAL) END AS LOCAL
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.REALM) END AS REALM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_HOST END AS HOST
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.COUNTRY_NM) END AS DST_COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.CARRIER_NM) END AS DST_CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.LOCAL) END AS DST_LOCAL
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.REALM) END AS DST_REALM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_HOST END AS DST_HOST
+
+        , SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        , A.IN_OCCUR_CNT / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS IN_TPS
+        , SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        , SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        , (SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) AS IN_FAIL_CNT
+        , IF(SUM(A.IN_OCCUR_CNT) = 0,0,(SUM(A.IN_SUCC_CNT) / SUM(A.IN_OCCUR_CNT))) *100 AS IN_SUCC_PERCENT
+        , IF(SUM(A.IN_OCCUR_CNT) = 0,0,((SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) / SUM(A.IN_OCCUR_CNT))) *100 AS IN_FAIL_PERCENT
+        , SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        , SUM(A.OUT_OCCUR_CNT) / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS OUT_TPS
+        , SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        , SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        , SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT) AS OUT_FAIL_CNT
+        , IF(SUM(A.OUT_OCCUR_CNT) = 0,0,(SUM(A.OUT_SUCC_CNT) / SUM(A.OUT_OCCUR_CNT))) *100 AS OUT_SUCC_PERCENT
+        , IF(SUM(A.OUT_OCCUR_CNT) = 0,0,((SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT)) / SUM(A.OUT_OCCUR_CNT))) *100 AS OUT_FAIL_PERCENT
+        <!-- FROM STCS_DIAMETER_5MIN A , CONF_DIAMETER_PEER B, COPY_T T
+      WHERE A.HOST = B.HOST -->
+        FROM STCS_DIAMETER_PEER A
+        LEFT OUTER JOIN CONF_DIAMETER_PEER B
+        ON A.SRC_HOST = B.HOST
+        AND A.LOCALITY = B.LOCALITY
+        LEFT OUTER JOIN CONF_DIAMETER_PEER C
+        ON A.DST_HOST = C.HOST
+        AND A.LOCALITY = C.LOCALITY
+        JOIN COPY_T T
+        WHERE 1=1
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND T.NO  <![CDATA[<=]]> 2
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_host != null and srch_host!= ""'>
+            AND A.SRC_HOST LIKE CONCAT('%', #{srch_host}, '%')
+        </if>
+        <if test=' srch_country != null and srch_country != ""'>
+            AND B.COUNTRY_NM LIKE CONCAT('%', #{srch_country}, '%')
+        </if>
+        <if test=' srch_realm != null and srch_realm!= ""'>
+            AND B.REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+        <if test=' srch_dst_host != null and srch_dst_host!= ""'>
+            AND A.DST_HOST LIKE CONCAT('%', #{srch_dst_host}, '%')
+        </if>
+        <if test=' srch_dst_country != null and srch_dst_country != ""'>
+            AND C.COUNTRY_NM LIKE CONCAT('%', #{srch_dst_country}, '%')
+        </if>
+        <if test=' srch_dst_realm != null and srch_dst_realm!= ""'>
+            AND C.REALM LIKE CONCAT('%', #{srch_dst_realm}, '%')
+        </if>
+
+        GROUP BY T.NO,
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END
+        ) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_HOST END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_HOST END
+        ) AS L
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+
+    <select id="getGtStatisticCnt" resultType="int" parameterType="ChartSearchInfo">
+        SELECT
+        COUNT(*) + 1
+        FROM
+        (
+        SELECT (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END) AS OCCUR_DT
+        ,A.LOCALITY
+        ,A.CGGT
+        ,A.CDGT
+        ,SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        ,SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        ,SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        ,SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        ,SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        ,SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        FROM STCS_GT_5MIN A
+        WHERE 1 = 1
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        GROUP BY (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT, '%i') / 30) * 30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m')
+        END)
+        ,A.LOCALITY
+        ,A.CGGT
+        ,A.CDGT
+        ) A
+        LEFT OUTER JOIN CONF_GT_MST CGGT ON CGGT.GT = A.CGGT
+        LEFT OUTER JOIN CONF_GT_MST CDGT ON CDGT.GT = A.CDGT
+        WHERE 1 = 1
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_cg_gt != null and srch_cg_gt != ""'>
+            AND A.CGGT LIKE CONCAT('%', #{srch_cg_gt}, '%')
+        </if>
+        <if test=' srch_cd_gt != null and srch_cd_gt != ""'>
+            AND A.CDGT LIKE CONCAT('%', #{srch_cd_gt}, '%')
+        </if>
+        <if test=' srch_cg_pc_list_nm != null and srch_cg_pc_list_nm != ""'>
+            AND CGGT.PC_LIST_NM LIKE CONCAT('%', #{srch_cg_pc_list_nm}, '%')
+        </if>
+        <if test=' srch_cd_pc_list_nm != null and srch_cd_pc_list_nm != ""'>
+            AND CDGT.PC_LIST_NM LIKE CONCAT('%', #{srch_cd_pc_list_nm}, '%')
+        </if>
+        <if test=' srch_cg_carrier_nm != null and srch_cg_carrier_nm != ""'>
+            AND CGGT.CARRIER_NM LIKE CONCAT('%', #{srch_cg_carrier_nm}, '%')
+        </if>
+        <if test=' srch_cd_carrier_nm != null and srch_cd_carrier_nm != ""'>
+            AND CDGT.CARRIER_NM LIKE CONCAT('%', #{srch_cd_carrier_nm}, '%')
+        </if>
+    </select>
+
+    <!-- Gt 별 통계 리스트  취득 -->
+    <select id="getGtStatistic" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        (CASE WHEN T.NO = 1 THEN '합계' ELSE A.OCCUR_DT END) AS OCCUR_DT
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE FNC_GET_GRCODE_NAME_EX('LOCALITY', A.LOCALITY, 'KOR') END) AS LOCALITY
+
+        , (CASE WHEN T.NO = 1 THEN '-' WHEN #{srch_groupping_pc_list_nm} = 'Y' THEN '-' ELSE A.CGGT END) AS CG_GT
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CGGT.PC_LIST_NM,'UNK') END) AS CG_PC_LIST_NM
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CGGT.CARRIER_NM,'UNK') END) AS CG_CARRIER_NM
+        , (CASE WHEN T.NO = 1 THEN '-' WHEN #{srch_groupping_pc_list_nm} = 'Y' THEN '-' ELSE A.CDGT END) AS CD_GT
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CDGT.PC_LIST_NM,'UNK') END) AS CD_PC_LIST_NM
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CDGT.CARRIER_NM,'UNK') END) AS CD_CARRIER_NM
+
+        <!--  ,(CASE WHEN T.NO = 1 THEN '-' ELSE A.CGGT END)                                       						AS CG_GT
+         ,CGGT.PC_LIST_NM																											AS CG_PC_LIST_NM
+         ,CGGT.CARRIER_NM																											AS CG_CARRIER_NM
+         ,(CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.CDGT END)                   		   		   		AS CD_GT
+         ,CDGT.PC_LIST_NM																											AS CD_PC_LIST_NM
+         ,CDGT.CARRIER_NM		   																									AS CD_CARRIER_NM -->
+        ,SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        ,SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        ,SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        ,IF(SUM(A.IN_OCCUR_CNT) = 0, 0, (SUM(A.IN_SUCC_CNT) / SUM(A.IN_OCCUR_CNT))) * 100 AS IN_SUCC_PERCENT
+        ,SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        ,SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        ,SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        ,IF(SUM(A.OUT_OCCUR_CNT) = 0, 0, (SUM(A.OUT_SUCC_CNT) / SUM(A.OUT_OCCUR_CNT))) * 100 AS OUT_SUCC_PERCENT
+        FROM
+        (
+        SELECT (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END) AS OCCUR_DT
+        ,A.LOCALITY
+        ,A.CGGT
+        ,A.CDGT
+        ,SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        ,SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        ,SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        ,SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        ,SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        ,SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        FROM STCS_GT_5MIN A
+        WHERE 1 = 1
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        GROUP BY (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT, '%i') / 30) * 30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m')
+        END)
+        ,A.LOCALITY
+        ,A.CGGT
+        ,A.CDGT
+        ) A
+        LEFT OUTER JOIN CONF_GT_MST CGGT ON CGGT.GT = A.CGGT
+        LEFT OUTER JOIN CONF_GT_MST CDGT ON CDGT.GT = A.CDGT
+        , COPY_T T
+        WHERE 1 = 1
+        AND T.NO <![CDATA[<=]]> 2
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_cg_gt != null and srch_cg_gt != ""'>
+            AND A.CGGT LIKE CONCAT('%', #{srch_cg_gt}, '%')
+        </if>
+        <if test=' srch_cd_gt != null and srch_cd_gt != ""'>
+            AND A.CDGT LIKE CONCAT('%', #{srch_cd_gt}, '%')
+        </if>
+        <if test=' srch_cg_pc_list_nm != null and srch_cg_pc_list_nm != ""'>
+            AND CGGT.PC_LIST_NM LIKE CONCAT('%', #{srch_cg_pc_list_nm}, '%')
+        </if>
+        <if test=' srch_cd_pc_list_nm != null and srch_cd_pc_list_nm != ""'>
+            AND CDGT.PC_LIST_NM LIKE CONCAT('%', #{srch_cd_pc_list_nm}, '%')
+        </if>
+        <if test=' srch_cg_carrier_nm != null and srch_cg_carrier_nm != ""'>
+            AND CGGT.CARRIER_NM LIKE CONCAT('%', #{srch_cg_carrier_nm}, '%')
+        </if>
+        <if test=' srch_cd_carrier_nm != null and srch_cd_carrier_nm != ""'>
+            AND CDGT.CARRIER_NM LIKE CONCAT('%', #{srch_cd_carrier_nm}, '%')
+        </if>
+        GROUP BY T.NO
+        ,(CASE WHEN T.NO = 1 THEN '합계' ELSE A.OCCUR_DT END)
+        ,(CASE WHEN T.NO = 1 THEN '-' ELSE A.LOCALITY END)
+
+        ,(CASE WHEN T.NO = 1 THEN '-' WHEN #{srch_groupping_pc_list_nm} = 'Y' THEN '-' ELSE A.CGGT END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CGGT.PC_LIST_NM,'UNK') END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CGGT.CARRIER_NM,'UNK') END)
+        , (CASE WHEN T.NO = 1 THEN '-' WHEN #{srch_groupping_pc_list_nm} = 'Y' THEN '-' ELSE A.CDGT END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CDGT.PC_LIST_NM,'UNK') END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CDGT.CARRIER_NM,'UNK') END)
+
+        ORDER BY T.NO
+        , (CASE WHEN T.NO = 1 THEN '합계' ELSE A.OCCUR_DT END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE A.LOCALITY END)
+
+        , (CASE WHEN T.NO = 1 THEN '-' WHEN #{srch_groupping_pc_list_nm} = 'Y' THEN '-' ELSE A.CGGT END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CGGT.PC_LIST_NM,'UNK') END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CGGT.CARRIER_NM,'UNK') END)
+        , (CASE WHEN T.NO = 1 THEN '-' WHEN #{srch_groupping_pc_list_nm} = 'Y' THEN '-' ELSE A.CDGT END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CDGT.PC_LIST_NM,'UNK') END)
+        , (CASE WHEN T.NO = 1 THEN '-' ELSE NVL(CDGT.CARRIER_NM,'UNK') END)
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!-- Realm 별 통계 리스트  취득 -->
+    <select id="getRealmStatisticCnt" resultType="int" parameterType="ChartSearchInfo">
+        SELECT
+        COUNT(*)
+        FROM (
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END)
+        END AS STCS_DT
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END AS LOCALITY
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.COUNTRY) END AS COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.CARRIER_NM) END AS CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.ROUTING_PEER) END AS ROUTING_PEER
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_REALM END AS REALM
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.COUNTRY) END AS DST_COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.CARRIER_NM) END AS DST_CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.ROUTING_PEER) END AS DST_ROUTING_PEER
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_REALM END AS DST_REALM
+
+        , SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        , A.IN_OCCUR_CNT / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS IN_TPS
+        , SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        , SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        , (SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) AS IN_FAIL_CNT
+        , (SUM(A.IN_SUCC_CNT) / SUM(A.IN_OCCUR_CNT)) *100 AS IN_SUCC_PERCENT
+        , ((SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) / SUM(A.IN_OCCUR_CNT)) *100 AS IN_FAIL_PERCENT
+        , SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        , SUM(A.OUT_OCCUR_CNT) / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS OUT_TPS
+        , SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        , SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        , SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT) AS OUT_FAIL_CNT
+        , (SUM(A.OUT_SUCC_CNT) / SUM(A.OUT_OCCUR_CNT)) *100 AS OUT_SUCC_PERCENT
+        , ((SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT)) / SUM(A.OUT_OCCUR_CNT)) *100 AS OUT_FAIL_PERCENT
+        FROM STCS_DIAMETER_REALM A
+        LEFT OUTER JOIN CONF_DIAMETER_REALM B
+        ON A.SRC_REALM = B.REALM
+        AND A.LOCALITY = B.LOCALITY
+        LEFT OUTER JOIN CONF_DIAMETER_REALM C
+        ON A.DST_REALM = C.REALM
+        AND A.LOCALITY = C.LOCALITY
+        JOIN COPY_T T
+        WHERE 1=1
+        AND T.NO  <![CDATA[<=]]> 2
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+
+        <if test=' srch_country != null and srch_country != ""'>
+            AND B.COUNTRY LIKE CONCAT('%', #{srch_country}, '%')
+        </if>
+        <if test=' srch_carrier_nm != null and srch_carrier_nm != ""'>
+            AND B.CARRIER_NM LIKE CONCAT('%', #{srch_carrier_nm}, '%')
+        </if>
+        <if test=' srch_realm != null and srch_realm!= ""'>
+            AND A.SRC_REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+
+        <if test=' srch_dst_country != null and srch_dst_country != ""'>
+            AND C.COUNTRY LIKE CONCAT('%', #{srch_dst_country}, '%')
+        </if>
+        <if test=' srch_dst_carrier_nm != null and srch_dst_carrier_nm != ""'>
+            AND C.CARRIER_NM LIKE CONCAT('%', #{srch_dst_carrier_nm}, '%')
+        </if>
+        <if test=' srch_dst_realm != null and srch_dst_realm!= ""'>
+            AND A.DST_REALM LIKE CONCAT('%', #{srch_dst_realm}, '%')
+        </if>
+
+
+        GROUP BY T.NO,
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END
+        ) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_REALM END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_REALM END
+
+        ) AS L
+    </select>
+
+    <!-- Realm 별 통계 리스트  취득 -->
+    <select id="getRealmStatistic" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT
+        L.OCCUR_DT
+        , L.LOCALITY
+        , L.COUNTRY_NM
+        , L.CARRIER_NM
+        , L.ROUTING_PEER
+        , L.REALM
+
+        , L.DST_COUNTRY_NM
+        , L.DST_CARRIER_NM
+        , L.DST_ROUTING_PEER
+        , L.DST_REALM
+
+        , L.IN_OCCUR_CNT
+        , L.IN_TPS
+        , L.IN_PKT_SIZE
+        , L.IN_SUCC_CNT
+        , L.IN_FAIL_CNT
+        , L.IN_SUCC_PERCENT
+        , L.IN_FAIL_PERCENT
+        , L.OUT_OCCUR_CNT
+        , L.OUT_TPS
+        , L.OUT_PKT_SIZE
+        , L.OUT_SUCC_CNT
+        , L.OUT_FAIL_CNT
+        , L.OUT_SUCC_PERCENT
+        , L.OUT_FAIL_PERCENT
+        FROM (
+        SELECT
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END)
+        END AS OCCUR_DT
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END AS LOCALITY
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.COUNTRY) END AS COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.CARRIER_NM) END AS CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(B.ROUTING_PEER) END AS ROUTING_PEER
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_REALM END AS REALM
+
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.COUNTRY) END AS DST_COUNTRY_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.CARRIER_NM) END AS DST_CARRIER_NM
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN MIN(C.ROUTING_PEER) END AS DST_ROUTING_PEER
+        ,CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_REALM END AS DST_REALM
+
+        , SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        , A.IN_OCCUR_CNT / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS IN_TPS
+        , SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        , SUM(A.IN_SUCC_CNT) AS IN_SUCC_CNT
+        , (SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) AS IN_FAIL_CNT
+        , IF(SUM(A.IN_OCCUR_CNT) = 0,0,(SUM(A.IN_SUCC_CNT) / SUM(A.IN_OCCUR_CNT))) *100 AS IN_SUCC_PERCENT
+        , IF(SUM(A.IN_OCCUR_CNT) = 0,0,((SUM(A.IN_OCCUR_CNT) - SUM(A.IN_SUCC_CNT)) / SUM(A.IN_OCCUR_CNT))) *100 AS IN_FAIL_PERCENT
+        , SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        , SUM(A.OUT_OCCUR_CNT) / (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN 5*60
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN 30*60
+        WHEN #{srch_stcs_dt} = 'TIME' THEN 60*60
+        WHEN #{srch_stcs_dt} = 'DAY' THEN 60*24*60
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN 60*24*30*60
+        END
+        ) AS OUT_TPS
+        , SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        , SUM(A.OUT_SUCC_CNT) AS OUT_SUCC_CNT
+        , SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT) AS OUT_FAIL_CNT
+        , IF(SUM(A.OUT_OCCUR_CNT) = 0,0,(SUM(A.OUT_SUCC_CNT) / SUM(A.OUT_OCCUR_CNT))) *100 AS OUT_SUCC_PERCENT
+        , IF(SUM(A.OUT_OCCUR_CNT) = 0,0,((SUM(A.OUT_OCCUR_CNT) - SUM(A.OUT_SUCC_CNT)) / SUM(A.OUT_OCCUR_CNT))) *100 AS OUT_FAIL_PERCENT
+        FROM STCS_DIAMETER_REALM A
+        LEFT OUTER JOIN CONF_DIAMETER_REALM B
+        ON A.SRC_REALM = B.REALM
+        AND A.LOCALITY = B.LOCALITY
+        LEFT OUTER JOIN CONF_DIAMETER_REALM C
+        ON A.DST_REALM = C.REALM
+        AND A.LOCALITY = C.LOCALITY
+        JOIN COPY_T T
+        WHERE 1=1
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        AND T.NO  <![CDATA[<=]]> 2
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_country != null and srch_country != ""'>
+            AND B.COUNTRY LIKE CONCAT('%', #{srch_country}, '%')
+        </if>
+        <if test=' srch_carrier_nm != null and srch_carrier_nm != ""'>
+            AND B.CARRIER_NM LIKE CONCAT('%', #{srch_carrier_nm}, '%')
+        </if>
+        <if test=' srch_realm != null and srch_realm!= ""'>
+            AND A.SRC_REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+
+        <if test=' srch_dst_country != null and srch_dst_country != ""'>
+            AND C.COUNTRY LIKE CONCAT('%', #{srch_dst_country}, '%')
+        </if>
+        <if test=' srch_dst_carrier_nm != null and srch_dst_carrier_nm != ""'>
+            AND C.CARRIER_NM LIKE CONCAT('%', #{srch_dst_carrier_nm}, '%')
+        </if>
+        <if test=' srch_dst_realm != null and srch_dst_realm!= ""'>
+            AND A.DST_REALM LIKE CONCAT('%', #{srch_dst_realm}, '%')
+        </if>
+
+        GROUP BY T.NO,
+        CASE WHEN T.NO = 1 THEN '합계'
+        WHEN T.NO = 2 THEN (
+        CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT,'%i')/30)*30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT,'%Y-%m') END
+        ) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.SRC_REALM END,
+        CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.DST_REALM END
+        ) AS L
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!--///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  -->
+    <!-- Linkset 별 통계 리스트  취득 -->
+    <select id="getLinksetStatisticCnt" resultType="int" parameterType="ChartSearchInfo">
+        SELECT COUNT(*) + 1
+        FROM
+        (
+        SELECT (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT, '%i') / 30) * 30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m')
+        END) AS OCCUR_DT
+        ,A.LOCALITY AS LOCALITY
+        ,A.LINKSET AS LINKSET
+        ,SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        ,SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        ,SUM(A.IN_MAP_OCCUR_CNT) AS IN_MAP_OCCUR_CNT
+        ,SUM(A.IN_MAP_PKT_SIZE) AS IN_MAP_PKT_SIZE
+        ,SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        ,SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        ,SUM(A.OUT_MAP_OCCUR_CNT) AS OUT_MAP_OCCUR_CNT
+        ,SUM(A.OUT_MAP_PKT_SIZE) AS OUT_MAP_PKT_SIZE
+        FROM STCS_LINKSET_5MIN A
+        WHERE 1 = 1
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        GROUP BY (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT, '%i') / 30) * 30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m')
+        END)
+        ,A.LOCALITY
+        ,A.LINKSET
+        ) A
+        LEFT OUTER JOIN CONF_LINKSET_MST B ON A.LOCALITY = B.LOCALITY AND A.LINKSET = B.APC
+        WHERE 1 = 1
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_linkset != null and srch_linkset != ""'>
+            AND A.LINKSET LIKE CONCAT('%', #{srch_linkset}, '%')
+        </if>
+        <if test=' srch_country != null and srch_country != ""'>
+            AND B.COUNTRY LIKE CONCAT('%', #{srch_country}, '%')
+        </if>
+        <if test=' srch_clli != null and srch_clli != ""'>
+            AND B.CLLI LIKE CONCAT('%', #{srch_clli}, '%')
+        </if>
+    </select>
+
+    <!-- Linkset 별 통계 리스트  취득 -->
+    <select id="getLinksetStatistic" resultType="ChartInfo" parameterType="ChartSearchInfo">
+        SELECT (CASE WHEN T.NO = 1 THEN '합계' ELSE A.OCCUR_DT END) AS OCCUR_DT
+        ,(CASE WHEN T.NO = 1 THEN '-' ELSE FNC_GET_GRCODE_NAME_EX('LOCALITY', A.LOCALITY, 'KOR') END) AS LOCALITY
+        ,(CASE WHEN T.NO = 1 THEN '-' WHEN T.NO = 2 THEN A.LINKSET END) AS LINKSET
+        ,B.COUNTRY AS COUNTRY_NM
+        ,B.CARRIER_NM AS CARRIER_NM
+        ,B.CLLI AS CLLI
+        ,SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        ,SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        ,SUM(A.IN_MAP_OCCUR_CNT) AS IN_MAP_OCCUR_CNT
+        ,SUM(A.IN_MAP_PKT_SIZE) AS IN_MAP_PKT_SIZE
+        ,SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        ,SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        ,SUM(A.OUT_MAP_OCCUR_CNT) AS OUT_MAP_OCCUR_CNT
+        ,SUM(A.OUT_MAP_PKT_SIZE) AS OUT_MAP_PKT_SIZE
+        FROM
+        (
+        SELECT (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT, '%i') / 30) * 30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m')
+        END) AS OCCUR_DT
+        ,A.LOCALITY AS LOCALITY
+        ,A.LINKSET AS LINKSET
+        ,SUM(A.IN_OCCUR_CNT) AS IN_OCCUR_CNT
+        ,SUM(A.IN_PKT_SIZE) AS IN_PKT_SIZE
+        ,SUM(A.IN_MAP_OCCUR_CNT) AS IN_MAP_OCCUR_CNT
+        ,SUM(A.IN_MAP_PKT_SIZE) AS IN_MAP_PKT_SIZE
+        ,SUM(A.OUT_OCCUR_CNT) AS OUT_OCCUR_CNT
+        ,SUM(A.OUT_PKT_SIZE) AS OUT_PKT_SIZE
+        ,SUM(A.OUT_MAP_OCCUR_CNT) AS OUT_MAP_OCCUR_CNT
+        ,SUM(A.OUT_MAP_PKT_SIZE) AS OUT_MAP_PKT_SIZE
+        FROM STCS_LINKSET_5MIN A
+        WHERE 1 = 1
+        AND A.CALL_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i')
+        AND A.CALL_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i')
+        GROUP BY (CASE WHEN #{srch_stcs_dt} = 'MIN05' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:%i')
+        WHEN #{srch_stcs_dt} = 'MIN30' THEN CONCAT(DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:'), LPAD(FLOOR(DATE_FORMAT(A.CALL_DT, '%i') / 30) * 30, 2, '0'))
+        WHEN #{srch_stcs_dt} = 'TIME' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d %H:00')
+        WHEN #{srch_stcs_dt} = 'DAY' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m-%d')
+        WHEN #{srch_stcs_dt} = 'MONTH' THEN DATE_FORMAT(A.CALL_DT, '%Y-%m')
+        END)
+        ,A.LOCALITY
+        ,A.LINKSET
+        ) A
+        LEFT OUTER JOIN CONF_LINKSET_MST B ON A.LOCALITY = B.LOCALITY AND A.LINKSET = B.APC
+        , COPY_T T
+        WHERE 1 = 1
+        AND T.NO <![CDATA[<=]]> 2
+        <if test=' srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test=' srch_linkset != null and srch_linkset != ""'>
+            AND A.LINKSET LIKE CONCAT('%', #{srch_linkset}, '%')
+        </if>
+        <if test=' srch_country != null and srch_country != ""'>
+            AND B.COUNTRY LIKE CONCAT('%', #{srch_country}, '%')
+        </if>
+        <if test=' srch_clli != null and srch_clli != ""'>
+            AND B.CLLI LIKE CONCAT('%', #{srch_clli}, '%')
+        </if>
+        GROUP BY T.NO
+        ,(CASE WHEN T.NO = 1 THEN '합계' ELSE A.OCCUR_DT END)
+        ,(CASE WHEN T.NO = 1 THEN '-' ELSE A.LOCALITY END)
+        ,(CASE WHEN T.NO = 1 THEN '-' ELSE A.LINKSET END)
+        ORDER BY T.NO
+        ,(CASE WHEN T.NO = 1 THEN '합계' ELSE A.OCCUR_DT END)
+        ,(CASE WHEN T.NO = 1 THEN '-' ELSE A.LOCALITY END)
+        ,(CASE WHEN T.NO = 1 THEN '-' ELSE A.LINKSET END)
+
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+
+    </select>
+
+
+</mapper>
+

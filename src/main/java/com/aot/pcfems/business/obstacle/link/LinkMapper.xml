@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.link">
+
+    <!-- Link 존재 체크 -->
+    <select id="getLinkExist" resultType="String" parameterType="LinkInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_link_mst
+                      WHERE APC = #{apc}
+                      	AND  SLC  = #{slc}
+                    	)
+	</select>
+
+    <!-- Link 설정정보 취득 -->
+    <select id="getLinkDetail" resultType="LinkInfo" parameterType="LinkInfo">
+         SELECT
+             A.NA, A.APC, A.SLC, A.SLOT_CH, A.COUNTRY_NM, A.CARRIER_NM, A.E1_CD, A.BEARRER_NM, A.E1_TIME_SLOT, A.CABLE_NM, A.NDCS_TIE, A.STATUS
+            ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+            ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+         FROM conf_link_mst A
+         WHERE A.APC = #{apc}
+             AND A.SLC = #{slc}
+    </select>
+
+    <!-- Link 설정정보를 갱신 한다 -->
+    <update id="updateLink" parameterType="LinkInfo">
+     UPDATE conf_link_mst
+         SET         	 
+         	NA						= #{na},         	         	
+         	SLOT_CH			= #{slot_ch}, 
+         	COUNTRY_NM		= #{country_nm}, 
+         	CARRIER_NM		= #{carrier_nm},
+         	E1_CD				= #{e1_cd},
+         	BEARRER_NM		= #{bearrer_nm},
+         	E1_TIME_SLOT	= #{e1_time_slot},
+         	CABLE_NM			= #{cable_nm},
+         	NDCS_TIE			= #{ndcs_tie},
+         	STATUS				= #{status},
+            UPD_ID  				= #{upd_id},
+            UPD_DT  			= now()
+        WHERE APC				= #{apc}
+            AND SLC				= #{slc}
+    </update>
+
+    <!-- Link 정보 리스트 갯수 취득 -->
+    <select id="getLinkListCnt" resultType="int" parameterType="LinkSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_link_mst A
+        WHERE 1=1
+        <if test=' srch_apc != null and srch_apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{srch_apc}, '%')
+        </if>
+        <if test=' srch_slc != null and srch_slc != ""'>
+            AND A.SLC LIKE CONCAT('%', #{srch_slc}, '%')
+        </if>
+        <if test=' srch_status != null and srch_status != ""'>
+            AND A.STATUS = #{srch_status}
+        </if>
+    </select>
+
+
+    <!-- Link 정보 리스트  취득 -->
+    <select id="getLinkInfoList" resultType="LinkInfo" parameterType="LinkSearchInfo">
+        SELECT
+        A.NA, A.APC, A.SLC, A.SLOT_CH, A.COUNTRY_NM, A.CARRIER_NM, A.E1_CD, A.BEARRER_NM, A.E1_TIME_SLOT, A.CABLE_NM, A.NDCS_TIE, A.STATUS
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        conf_link_mst A
+        WHERE 1=1
+        <if test=' srch_apc != null and srch_apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{srch_apc}, '%')
+        </if>
+        <if test=' srch_slc != null and srch_slc != ""'>
+            AND A.SLC LIKE CONCAT('%', #{srch_slc}, '%')
+        </if>
+        <if test=' srch_status != null and srch_status != ""'>
+            AND A.STATUS = #{srch_status}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertLink" parameterType="LinkInfo">
+        INSERT INTO conf_link_mst (
+               NA, 
+               APC, 
+               SLC, 
+               SLOT_CH, 
+               COUNTRY_NM, 
+               CARRIER_NM, 
+               E1_CD, 
+               BEARRER_NM, 
+               E1_TIME_SLOT, 
+               CABLE_NM, 
+               NDCS_TIE, 
+               STATUS, 
+               CRT_ID,
+               CRT_DT,
+               UPD_ID,
+               UPD_DT
+               )
+        VALUES(
+	           #{na}, 
+               #{apc}, 
+               #{slc},
+               #{slot_ch}, 
+               #{country_nm}, 
+               #{carrier_nm},
+               #{e1_cd},
+               #{bearrer_nm}, 
+               #{e1_time_slot}, 
+               #{cable_nm},
+               #{ndcs_tie},
+               #{status},
+	           #{crt_id},
+	           now(),
+	           #{crt_id},
+	           now() 
+	              )
+    </insert>
+
+    <!-- Link 정보를 삭제 한다 -->
+    <delete id="deleteLink" parameterType="LinkInfo">
+        DELETE FROM conf_link_mst WHERE APC = #{apc} AND SLC = #{slc}
+    </delete>
+
+</mapper>
+

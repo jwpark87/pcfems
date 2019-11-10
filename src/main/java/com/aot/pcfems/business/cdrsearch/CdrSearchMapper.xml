@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.cdrsearch">
+
+    <!-- 조회 통합 기본값 취득 -->
+    <select id="getCdrDefaultInfo" resultType="CdrSearchVO" parameterType="CdrSearchSearchInfo">
+	        SELECT
+	            INDEX_TYPE, FORMAT_NAME, ES_BASE_URL, OUT_COL_IDS, OUT_COL_NAMES, out_col_types, DEF_COL_ID,
+	            DATE_FORMAT(DEF_FROMDT,'%Y-%m-%d%H%i') AS DEF_FROMDT,
+	            DATE_FORMAT(DEF_TODT,'%Y-%m-%d%H%i') AS DEF_TODT,
+	            TOTAL_ROW_CNT,
+				OLDEST_DT,
+				NEWEST_DT
+	        FROM
+	             vw_srch_format_mst
+	        WHERE 1=1
+	    	    AND INDEX_TYPE = #{srch_index_type}
+    </select>
+
+    <!-- 컬럼 리스트 취득 -->
+    <select id="getCdrColumnList" resultType="CdrSearchVO" parameterType="CdrSearchSearchInfo">
+	        SELECT
+	            INDEX_TYPE, COL_CD, COL_NM, TEXT_ALIGN, GRCODE, DSP_WIDTH, SEARCH_YN, SORTSEQ
+	        FROM
+	             srch_format_det
+	        WHERE 1=1
+	    	    AND INDEX_TYPE = #{srch_index_type}
+	    	    AND USE_YN 		= 'Y'
+	    	 ORDER BY SORTSEQ
+    </select>
+
+
+    <resultMap id="CdrFilterMap" type="CodeInfo">
+        <result property="code" column="CODE"/>
+        <result property="codenm_k" column="CODENM_KOR"/>
+        <result property="codenm_e" column="CODENM_ENG"/>
+        <result property="codenm_j" column="CODENM_JPN"/>
+    </resultMap>
+    <!-- 필터 컬럼 리스트 취득 -->
+    <select id="getCdrFilterColumnList" resultMap="CdrFilterMap" parameterType="CdrSearchSearchInfo">
+	        SELECT
+	            COL_CD AS CODE
+	            ,COL_NM AS CODENM_KOR
+   	        	,COL_NM AS CODENM_ENG
+   	        	,COL_NM AS CODENM_JPN
+	        FROM
+	             srch_format_det
+	        WHERE 1=1
+	    	    AND INDEX_TYPE = #{srch_index_type}
+	    	    AND USE_YN 		= 'Y'
+	    	    AND SEARCH_YN  = 'Y'
+	    	 ORDER BY SORTSEQ
+    </select>
+
+    <select id="getPrcHandleSnmpalarmList" parameterType="Map" statementType="CALLABLE">
+        { CALL PRC_SESSION_TERM  (
+        			  #{p_src_env,mode=IN,jdbcType=VARCHAR}
+                     , #{p_data_param,mode=IN,jdbcType=VARCHAR}
+                     , #{p_retcode,mode=OUT,jdbcType=INTEGER}
+                     , #{p_retmsg,mode=OUT,jdbcType=VARCHAR}
+                     ) }
+    </select>
+
+</mapper>
+

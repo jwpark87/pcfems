@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.admin.audit">
+
+    <!--  Audit Log 리스트 갯수 취득 -->
+    <select id="getAuditLogListCnt" resultType="int" parameterType="AuditLogSearchInfo">
+        SELECT
+        COUNT(1)
+        FROM
+        MGMT_AUDIT_LOG A
+        WHERE A.CRT_DT <![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i%s')
+        AND A.CRT_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i%s')
+        <if test=' srch_audit_subject != null and srch_audit_subject != ""'>
+            AND A.AUDIT_SUBJECT LIKE CONCAT('%', #{srch_audit_subject}, '%')
+        </if>
+        <if test=' srch_audit_desc != null and srch_audit_desc != ""'>
+            AND A.AUDIT_DESC LIKE CONCAT('%', #{srch_audit_desc}, '%')
+        </if>
+        <if test=' srch_audit_before_data != null and srch_audit_before_data != ""'>
+            AND A.AUDIT_BEFORE_DATA LIKE CONCAT('%', #{srch_audit_before_data}, '%')
+        </if>
+        <if test=' srch_audit_after_data != null and srch_audit_after_data != ""'>
+            AND A.AUDIT_AFTER_DATA LIKE CONCAT('%', #{srch_audit_after_data}, '%')
+        </if>
+        <if test=' srch_crt_id != null and srch_crt_id != ""'>
+            AND FNC_GET_USER_NAME(CRT_ID) LIKE CONCAT('%', #{srch_crt_id}, '%')
+        </if>
+    </select>
+
+    <!--  Audit Log 조회 리스트  취득 -->
+    <select id="getAuditLogList" resultType="AuditLogInfo" parameterType="AuditLogSearchInfo">
+        SELECT
+        A.AUDIT_LOG_NO
+        , DATE_FORMAT(A.CRT_DT,'%Y-%m-%d %H:%i:%s') AS CRT_DT
+        , A.AUDIT_SUBJECT
+        , A.AUDIT_DESC
+        , A.AUDIT_BEFORE_DATA
+        , A.AUDIT_AFTER_DATA
+        , FNC_GET_USER_NAME(A.CRT_ID) AS CRT_NM
+        FROM
+        MGMT_AUDIT_LOG A
+        WHERE A.CRT_DT <![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i%s')
+        AND A.CRT_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i%s')
+        <if test=' srch_audit_subject != null and srch_audit_subject != ""'>
+            AND A.AUDIT_SUBJECT LIKE CONCAT('%', #{srch_audit_subject}, '%')
+        </if>
+        <if test=' srch_audit_desc != null and srch_audit_desc != ""'>
+            AND A.AUDIT_DESC LIKE CONCAT('%', #{srch_audit_desc}, '%')
+        </if>
+        <if test=' srch_audit_before_data != null and srch_audit_before_data != ""'>
+            AND A.AUDIT_BEFORE_DATA LIKE CONCAT('%', #{srch_audit_before_data}, '%')
+        </if>
+        <if test=' srch_audit_after_data != null and srch_audit_after_data != ""'>
+            AND A.AUDIT_AFTER_DATA LIKE CONCAT('%', #{srch_audit_after_data}, '%')
+        </if>
+        <if test=' srch_crt_id != null and srch_crt_id != ""'>
+            AND FNC_GET_USER_NAME(CRT_ID) LIKE CONCAT('%', #{srch_crt_id}, '%')
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+
+</mapper>
+

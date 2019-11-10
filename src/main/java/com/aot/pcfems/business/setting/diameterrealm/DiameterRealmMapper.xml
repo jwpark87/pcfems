@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.setting.diameterrealm">
+
+    <!-- Diameter 존재 체크 -->
+    <select id="getDiameterRealmExist" resultType="String" parameterType="DiameterRealmInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_diameter_realm
+                      WHERE REALM = #{realm} AND LOCALITY = #{locality})
+	</select>
+
+    <!-- Diameter 설정정보 취득 -->
+    <select id="getDiameterRealmDetail" resultType="DiameterRealmInfo" parameterType="DiameterRealmInfo">
+         SELECT
+            	   LOCALITY
+            	 , COUNTRY
+            	 , CARRIER_NM
+            	 , ROUTING_PEER
+            	 , REALM
+            	 , CONTACT_EMAIL
+            	 ,DATE_FORMAT(OPEN_DT, '%Y-%m-%d') OPEN_DT
+            	 ,DSBD_YN
+         FROM conf_diameter_realm
+         WHERE REALM 		= #{realm}
+             AND LOCALITY 	= #{locality}
+    </select>
+
+    <!-- Diameter 설정정보를 갱신 한다 -->
+    <update id="updateDiameterRealm" parameterType="DiameterRealmInfo">
+        UPDATE conf_diameter_realm
+        SET
+        COUNTRY = #{country}
+        ,CARRIER_NM = #{carrier_nm}
+        ,ROUTING_PEER = #{routing_peer}
+        ,CONTACT_EMAIL = #{contact_email}
+        <if test='open_dt != null and open_dt != ""'>
+            ,OPEN_DT = #{open_dt}
+        </if>
+        <if test="open_dt == ''">
+            ,OPEN_DT = null
+        </if>
+        ,DSBD_YN = #{dsbd_yn}
+        ,UPD_ID = #{upd_id}
+        ,UPD_DT = now()
+        WHERE REALM = #{realm}
+        AND LOCALITY = #{locality}
+    </update>
+
+    <!-- Diameter 정보 리스트 갯수 취득 -->
+    <select id="getDiameterRealmInfoListCount" resultType="int" parameterType="DiameterRealmSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_diameter_realm A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='routing_peer != "null" and routing_peer != null and routing_peer != ""'>
+            AND A.ROUTING_PEER LIKE CONCAT('%', #{routing_peer}, '%')
+        </if>
+        <if test='srch_realm != "null" and srch_realm != null and srch_realm != ""'>
+            AND A.REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+        <if test='contact_email != "null" and contact_email != null and contact_email != ""'>
+            AND A.CONTACT_EMAIL LIKE CONCAT('%', #{contact_email}, '%')
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+    </select>
+
+
+    <!-- Diameter 정보 리스트  취득 -->
+    <select id="getDiameterRealmInfoList" resultType="DiameterRealmInfo" parameterType="DiameterRealmSearchInfo">
+        SELECT
+        A.LOCALITY
+        , FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY_NM
+        , A.COUNTRY
+        , A.CARRIER_NM
+        , A.ROUTING_PEER
+        , A.REALM
+        , A.CONTACT_EMAIL
+        ,DATE_FORMAT(A.OPEN_DT, '%Y-%m-%d') OPEN_DT
+        ,A.DSBD_YN
+        ,FNC_GET_GRCODE_NAME_EX('W001',A.DSBD_YN,#{user_lang}) AS DSBD_YN_NM
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        conf_diameter_realm A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='routing_peer != "null" and routing_peer != null and routing_peer != ""'>
+            AND A.ROUTING_PEER LIKE CONCAT('%', #{routing_peer}, '%')
+        </if>
+        <if test='srch_realm != "null" and srch_realm != null and srch_realm != ""'>
+            AND A.REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+        <if test='contact_email != "null" and contact_email != null and contact_email != ""'>
+            AND A.CONTACT_EMAIL LIKE CONCAT('%', #{contact_email}, '%')
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertDiameterRealm" parameterType="DiameterRealmInfo">
+        INSERT INTO conf_diameter_realm (
+        LOCALITY
+        ,COUNTRY
+        ,CARRIER_NM
+        ,ROUTING_PEER
+        ,REALM
+        ,CONTACT_EMAIL
+        ,OPEN_DT
+        ,DSBD_YN
+        ,CRT_ID
+        ,CRT_DT
+        ,UPD_ID
+        ,UPD_DT
+        )
+        VALUES(
+        #{locality}
+        ,#{country}
+        ,#{carrier_nm}
+        ,#{routing_peer}
+        ,#{realm}
+        ,#{contact_email}
+        <if test='open_dt != null and open_dt != ""'>
+            ,#{open_dt}
+        </if>
+        <if test="open_dt == ''">
+            ,null
+        </if>
+        ,#{dsbd_yn}
+        ,#{crt_id}
+        ,now()
+        ,#{crt_id}
+        ,now()
+        )
+    </insert>
+
+    <!-- Diameter 정보를 삭제 한다 -->
+    <delete id="deleteDiameterRealm" parameterType="DiameterRealmInfo">
+        DELETE FROM conf_diameter_realm WHERE REALM = #{realm} AND LOCALITY = #{locality}     
+    </delete>
+
+</mapper>
+

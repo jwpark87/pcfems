@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.alarmhist.AlarmHistoryDAO">
+
+    <!-- 알람이력조회 리스트 갯수 취득 -->
+    <select id="getAlarmHistoryListCnt" resultType="int" parameterType="AlarmHistorySearchInfo">
+        SELECT
+        COUNT(1)
+        FROM
+        EMSM_SNMPALARM_HIS A
+        WHERE 1=1
+        AND A.ALM_OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i%s')
+        AND A.ALM_OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i%s')
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_host )'>
+            AND A.HOST_NM LIKE CONCAT('%', #{srch_alm_host}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_code )'>
+            AND A.ALM_CODE LIKE CONCAT('%', #{srch_alm_code}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_remark1 )'>
+            AND A.ALM_REMARK1 LIKE CONCAT('%', #{srch_alm_remark1}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_instance )'>
+            AND A.ALM_INSTANCE LIKE CONCAT('%', #{srch_alm_instance}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_msg )'>
+            AND A.ALM_MSG LIKE CONCAT('%', #{srch_alm_msg}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_level )'>
+            AND A.ALM_LEVEL IN
+            <foreach item="ar_search_alm_level" index="index" collection="ar_search_alm_level" open="(" separator="," close=")">
+                #{ar_search_alm_level}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 알람이력조회 리스트  취득 -->
+    <select id="getAlarmHistoryList" resultType="AlarmHistoryInfo" parameterType="AlarmHistorySearchInfo">
+        SELECT
+        SEQNO
+        ,ALM_STATUS
+        ,HOST_NM
+        ,PROC_NM
+        ,ALM_PID
+        ,ALM_CATEGORY
+        ,ALM_CODE
+        ,ALM_OCCUR_DT
+        ,ALM_LEVEL
+        ,SOUND_YN
+        ,ALM_MSG
+        ,OCCUR_CNT
+        ,FIRST_OCCUR_DT
+        ,ALM_REMARK1
+        ,ALM_CLEAR_DT
+        ,ALM_KNOW_DT
+        ,ALM_CONFIRM_USER
+        ,ALM_CONFIRM_DT
+        ,ALM_GROUP
+        ,ALM_INSTANCE
+        ,ALM_RECOVERY
+        FROM (
+        SELECT
+        A.SEQNO
+        ,CASE WHEN A.ALM_CLEAR_DT IS NOT NULL THEN 'TERMINATE'
+        WHEN A.ALM_KNOW_DT IS NOT NULL THEN 'KNOW'
+        ELSE 'HAPPEN' END AS ALM_STATUS
+        , A.HOST_NM
+        , A.PROC_NM
+        , A.ALM_PID
+        , A.ALM_CATEGORY
+        , A.ALM_CODE
+        , DATE_FORMAT(A.ALM_OCCUR_DT,'%Y-%m-%d %H:%i:%s') AS ALM_OCCUR_DT
+        , FNC_GET_GRCODE_NAME_EX('ALM_LEVEL',A.ALM_LEVEL,#{user_lang}) AS ALM_LEVEL
+        , FNC_GET_GRCODE_NAME_EX('W001',A.SOUND_YN,#{user_lang}) AS SOUND_YN
+        , A.ALM_MSG
+        , A.OCCUR_CNT
+        , DATE_FORMAT(A.FIRST_OCCUR_DT,'%Y-%m-%d %H:%i:%s') AS FIRST_OCCUR_DT
+        , A.ALM_REMARK1
+        , DATE_FORMAT(A.ALM_CLEAR_DT,'%Y-%m-%d %H:%i:%s') AS ALM_CLEAR_DT
+        , DATE_FORMAT(A.ALM_KNOW_DT,'%Y-%m-%d %H:%i:%s') AS ALM_KNOW_DT
+        , FNC_GET_USER_NAME(A.ALM_CONFIRM_USER) AS ALM_CONFIRM_USER
+        , DATE_FORMAT(A.ALM_CONFIRM_DT,'%Y-%m-%d %H:%i:%s') AS ALM_CONFIRM_DT
+        , A.ALM_CATEGORY AS ALM_GROUP
+        , A.ALM_INSTANCE
+        , CAM.ALM_RECOVERY
+        FROM EMSM_SNMPALARM_HIS A
+        LEFT OUTER JOIN COMM_ALARM_MST CAM ON A.ALM_CODE = CAM.ALM_CODE
+        WHERE 1 = 1
+        AND A.ALM_OCCUR_DT<![CDATA[>=]]> STR_TO_DATE(#{srch_date_from}, '%Y%m%d%H%i%s')
+        AND A.ALM_OCCUR_DT <![CDATA[<=]]> STR_TO_DATE(#{srch_date_to}, '%Y%m%d%H%i%s')
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_host )'>
+            AND A.HOST_NM LIKE CONCAT('%', #{srch_alm_host}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_code )'>
+            AND A.ALM_CODE LIKE CONCAT('%', #{srch_alm_code}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_remark1 )'>
+            AND A.ALM_REMARK1 LIKE CONCAT('%', #{srch_alm_remark1}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_instance )'>
+            AND A.ALM_INSTANCE LIKE CONCAT('%', #{srch_alm_instance}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_msg )'>
+            AND A.ALM_MSG LIKE CONCAT('%', #{srch_alm_msg}, '%')
+        </if>
+        <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( srch_alm_level )'>
+            AND A.ALM_LEVEL IN
+            <foreach item="ar_search_alm_level" index="index" collection="ar_search_alm_level" open="(" separator="," close=")">
+                #{ar_search_alm_level}
+            </foreach>
+        </if>
+        ) T
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+</mapper>
+

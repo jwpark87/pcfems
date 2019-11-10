@@ -1,0 +1,243 @@
+
+app.controller('myMatchCtrl', [ '$scope', '$ionicSideMenuDelegate', '$state', 'sendHttp','$http','$window','Login','uiCalendarConfig','moveDataService','$compile', function($scope, $ionicSideMenuDelegate, $state, sendHttp, $http, $window,Login,uiCalendarConfig,moveDataService,$compile) {
+        var vm = this;
+
+        var date = new Date();
+        var d = date.getDate();
+        var m = date.getMonth();
+        var y = date.getFullYear();
+        
+        
+        $scope.events = [];
+         //단말기 높이 구하기
+         var device_height = document.getElementById("calendar-view").offsetHeight;        
+         var cal_height = device_height-200;
+        
+        //추후 GW TEST 확인 사항 
+        //이전 다음 버튼 클릭시 이벤트 재로딩 확인       
+        $scope.events.push(
+                {
+                    title: '',
+                    start: '2016-12-19',
+                    end: '2016-12-19',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                },
+                {
+                    title: '',
+                    start: '2016-12-22',
+                    end: '2016-12-22',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                },
+                {
+                    title: '',
+                    start: '2016-12-25',
+                    end: '2016-12-25',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                }
+                        
+        )
+               
+        $scope.uiConfig = {
+              calendar: {
+                  //defaultDate: y+"-"+m+"-"+d,
+                header: {
+                    left: '',
+                    center: 'myPrevButton title myNextButton',
+                        right: ''
+                },
+                  customButtons: {
+                    myPrevButton: {
+                        icon:'left-single-arrow',
+                        click: function () {
+                            prevMonthMove();
+                        }
+                    },
+                    myNextButton: {
+                        icon:'right-single-arrow',
+                        click: function () {
+                            nextMonthMove();
+                        }
+                    }
+                },
+                weekends : true,
+                fixedWeekCount : false,                 //이전 다음 달의 날이 전체 로우 일 경우 안보이게 함.
+                 height: cal_height,
+                  editable: false,
+                  lang: 'ko',                  
+                  eventLimit: false,
+                  eventTextColor : '#000000',
+                  //공간 선택 이벤트
+//                  selectable: true,
+//                  select: function (start, end, jsEvent, view) {                      
+//                    
+////                선택 후 빈 공간 선택되는 거 해제
+//                      uiCalendarConfig.calendars.myCalendar.fullCalendar('unselect');
+//                  },                    
+                  dayClick: function(event) {
+                      moveDetPageDay(event.format());
+                  },
+                  eventClick: function (calEvent, jsEvent, view) {
+                      console.log(calEvent);   //전체보기         
+                      //alert(calEvent.start._i); // yyyy-mm-dd
+                      moveDetPage(calEvent.start._i);
+                  },                  
+                  viewRender: function (view, element) {
+                      var b = view.start;
+                  },
+                  eventRender: function (event, element) {
+                      $(element).addTouch();
+//                이벤트에 아이콘 이름으로 구분하여 아이콘 삽입
+//                      if (event.icon == "basketball") {
+//                          $(element).find(".fc-title").prepend("<i class='ion-ios-baseball-outline'></i>&nbsp;");
+//                      }                      
+                                                                  
+                      //이벤트 배경색 날 배경색과 동일하게 맞춤
+                      var dataToFind = moment(event.start).format('YYYY-MM-DD');                      
+                      $("td[data-date='" + dataToFind + "']").addClass('activeDay');
+                      //화면 크기 클 경우 이벤트 숫자 크기 키우기
+                      if(device_height > 510)  {
+                          $(element).find(".fc-title").prepend("<i class='ion-android-calendar'></i>&nbsp;");
+                          $(element).find(".fc-content").addClass("custom-event-font-size");
+                      }
+                      $compile(element)($scope);
+                  }
+//                  이벤트 넓이
+                  ,
+                  eventAfterRender: function(event, element, view) {                      
+                        //$(element).css('width','50px');
+                       // $(element).css('height','28px');
+                    }
+                    ,
+                dayRender : function (date, cell) {
+                   cell.addTouch();
+                }
+              }
+          }
+          
+          $scope.eventSources = [$scope.events];
+          
+        //$('#calendar').fullCalendar('prev');
+        //var moment = $('#calendar').fullCalendar('getDate');
+          function prevMonthMove(){
+              $scope.events = [];
+//            uiCalendarConfig.calendars["myCalendar"].fullCalendar('destory');            
+//            uiCalendarConfig.calendars["myCalendar"].fullCalendar('render');
+            uiCalendarConfig.calendars["myCalendar"].fullCalendar('prev');
+            var moment = uiCalendarConfig.calendars["myCalendar"].fullCalendar('getDate');
+             
+              $scope.events.push(
+                {
+                    title: '',
+                    start: '2016-12-19',
+                    end: '2016-12-19',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                },
+                {
+                    title: '',
+                    start: '2016-12-22',
+                    end: '2016-12-22',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                }
+            )
+              uiCalendarConfig.calendars["myCalendar"].fullCalendar('removeEvents');
+              //uiCalendarConfig.calendars["myCalendar"].fullCalendar('removeEventSource');
+              
+              
+//              uiCalendarConfig.calendars["myCalendar"].fullCalendar('rerenderEvents');
+//              uiCalendarConfig.calendars["myCalendar"].fullCalendar('refetchResources');
+//              uiCalendarConfig.calendars["myCalendar"].fullCalendar('refetchEvents');                
+              //$scope.eventSources = [$scope.events];
+              uiCalendarConfig.calendars['myCalendar'].fullCalendar('addEventSource', $scope.events);             
+              //uiCalendarConfig.calendars["myCalendar"].fullCalendar('refetchEvents');
+                            
+          }
+          
+          
+          function nextMonthMove(){            
+            $scope.events = [];
+//            uiCalendarConfig.calendars["myCalendar"].fullCalendar('destory');            
+//            uiCalendarConfig.calendars["myCalendar"].fullCalendar('render');
+            uiCalendarConfig.calendars["myCalendar"].fullCalendar('next');
+            var moment = uiCalendarConfig.calendars["myCalendar"].fullCalendar('getDate');
+             
+              $scope.events.push(
+                {
+                    title: '',
+                    start: '2017-01-01',
+                    end: '2017-01-01',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                },
+                  {
+                    title: '',
+                    start: '2017-01-02',
+                    end: '2017-01-02',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                },
+                {
+                    title: '',
+                    start: '2017-01-22',
+                    end: '2017-01-22',                    
+                    color: '#FFD8D8',
+                    icon : "basketball",
+                    allDay: true
+                }
+            )
+              uiCalendarConfig.calendars["myCalendar"].fullCalendar('removeEvents');                
+
+//                uiCalendarConfig.calendars['myCalendar'].fullCalendar('removeEventSource', $scope.eventSources);
+//                uiCalendarConfig.calendars["myCalendar"].fullCalendar('removeEvents');
+              //$scope.eventSources = [$scope.events]; 
+            //  uiCalendarConfig.calendars["myCalendar"].fullCalendar('removeEventSource');
+              uiCalendarConfig.calendars['myCalendar'].fullCalendar('addEventSource', $scope.events);            
+              //uiCalendarConfig.calendars["myCalendar"].fullCalendar('refetchEvents');
+              
+//              uiCalendarConfig.calendars["myCalendar"].fullCalendar('rerenderEvents');
+//              uiCalendarConfig.calendars["myCalendar"].fullCalendar('refetchResources');            
+                
+          }
+          
+          
+//          해당 날의 매치 목록 화면
+        function moveDetPage(start){
+            var mvData = {};
+            mvData["title"] = "test";
+            mvData["start"] = start;
+            mvData["color"] = "red";
+            moveDataService.setData(mvData);
+            $state.go("comm_menu_tab.my_match_det");        
+        }
+        //날 선택시 이벤트 없는 날은 이동 안하게.
+        function moveDetPageDay(start){
+            var mvData = {};
+             angular.forEach(vm.events, function (val, key) {
+                if (start === val.start) {
+                    mvData["title"] = "test";
+                    mvData["start"] = start;
+                    mvData["color"] = "red";
+                    moveDataService.setData(mvData);
+                    $state.go("comm_menu_tab.my_match_det");
+                }
+            });            
+        }
+        
+         
+         $scope.mySc = function (content,cnt) {
+              alert(content + cnt);
+         }
+
+        
+}]);

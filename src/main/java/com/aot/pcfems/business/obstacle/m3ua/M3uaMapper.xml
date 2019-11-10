@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.m3ua">
+
+    <!-- Tdm 존재 체크 -->
+    <select id="getM3uaExist" resultType="String" parameterType="M3uaInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_m3ua_mst
+                      WHERE SORTSEQ = #{sortseq}                      	
+                    	)
+	</select>
+
+    <!-- M3ua 설정정보 취득 -->
+    <select id="getM3uaDetail" resultType="M3uaInfo" parameterType="M3uaInfo">
+         SELECT
+         			 A.SORTSEQ
+					,A.LOCALITY
+					,A.IF_TYPE
+					,A.COUNTRY_NM
+					,A.CARRIER_NM
+					,A.APC
+					,A.ASP_ID
+					,A.LOC_BOUNDARY
+					,A.NA
+					,A.SLC
+					,A.CLLI
+					,A.ROUTING_CONTEXT
+					,A.SRC_PRIMARY_IP
+					,A.SRC_SECONDARY_IP
+					,A.SRC_PORT
+					,A.DST_PRIMARY_IP
+					,A.DST_SECONDARY_IP
+					,A.DST_PORT
+					,A.ASP_TYPE
+					,A.SI
+					,A.ROUTING_CPU
+					,A.STATUS
+            		,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+            		,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+            		,DSBD_YN
+         FROM conf_m3ua_mst A
+         WHERE A.SORTSEQ = #{sortseq}
+    </select>
+
+    <!-- Tdm 설정정보를 갱신 한다 -->
+    <update id="updateM3ua" parameterType="M3uaInfo">
+     UPDATE conf_m3ua_mst
+         SET         	  
+         	LOCALITY								=#{locality}
+			,IF_TYPE								=#{if_type}
+			,COUNTRY_NM							=#{country_nm}
+			,CARRIER_NM							=#{carrier_nm}
+			,APC										=#{apc}
+			,ASP_ID									=#{asp_id}
+			,LOC_BOUNDARY						=#{loc_boundary}
+			,NA										=#{na}
+			,SLC										=#{slc}
+			,CLLI										=#{clli}
+			,ROUTING_CONTEXT					=#{routing_context}
+			,SRC_PRIMARY_IP						=#{src_primary_ip}
+			,SRC_SECONDARY_IP				=#{src_secondary_ip}
+			,SRC_PORT								=#{src_port}
+			,DST_PRIMARY_IP						=#{dst_primary_ip}
+			,DST_SECONDARY_IP				=#{dst_secondary_ip}
+			,DST_PORT								=#{dst_port}
+			,ASP_TYPE								=#{asp_type}
+			,SI											=#{si}
+			,ROUTING_CPU							=#{routing_cpu}							
+         	,STATUS									=#{status}
+         	,DSBD_YN								= #{dsbd_yn}
+            ,UPD_ID  								=#{upd_id}
+            ,UPD_DT  								= now()
+        WHERE SORTSEQ 		= #{sortseq}            
+    </update>
+
+    <!-- Link 정보 리스트 갯수 취득 -->
+    <select id="getM3uaInfoListCount" resultType="int" parameterType="M3uaSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_m3ua_mst A
+        WHERE 1=1
+        <if test='srch_sortseq != "null" and srch_sortseq != null and srch_sortseq != ""'>
+            AND A.SORTSEQ LIKE CONCAT('%', #{srch_sortseq}, '%')
+        </if>
+        <if test='locality != "null" and locality != null and locality != ""'>
+            AND A.LOCALITY = #{locality}
+        </if>
+        <if test='if_type != "null" and if_type != null and if_type != ""'>
+            AND A.IF_TYPE LIKE CONCAT('%', #{if_type}, '%')
+        </if>
+        <if test='country_nm != "null" and country_nm != null and country_nm != ""'>
+            AND A.COUNTRY_NM LIKE CONCAT('%', #{country_nm}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='apc != "null" and apc != null and apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{apc}, '%')
+        </if>
+        <if test='asp_id != "null" and asp_id != null and asp_id != ""'>
+            AND A.ASP_ID LIKE CONCAT('%', #{asp_id}, '%')
+        </if>
+        <if test='loc_boundary != "null" and loc_boundary != null and loc_boundary != ""'>
+            AND A.LOC_BOUNDARY LIKE CONCAT('%', #{loc_boundary}, '%')
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test=" slc != null ">
+            AND A.SLC LIKE CONCAT('%', #{slc}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='routing_context != "null" and routing_context != null and routing_context != ""'>
+            AND A.ROUTING_CONTEXT LIKE CONCAT('%', #{routing_context}, '%')
+        </if>
+        <if test='src_primary_ip != "null" and src_primary_ip != null and src_primary_ip != ""'>
+            AND A.SRC_PRIMARY_IP LIKE CONCAT('%', #{src_primary_ip}, '%')
+        </if>
+        <if test='src_secondary_ip != "null" and src_secondary_ip != null and src_secondary_ip != ""'>
+            AND A.SRC_SECONDARY_IP LIKE CONCAT('%', #{src_secondary_ip}, '%')
+        </if>
+        <if test=" src_port != null ">
+            AND A.SRC_PORT LIKE CONCAT('%', #{src_port}, '%')
+        </if>
+        <if test='dst_primary_ip != "null" and dst_primary_ip != null and dst_primary_ip != ""'>
+            AND A.DST_PRIMARY_IP LIKE CONCAT('%', #{dst_primary_ip}, '%')
+        </if>
+        <if test='dst_secondary_ip != "null" and dst_secondary_ip != null and dst_secondary_ip != ""'>
+            AND A.DST_SECONDARY_IP LIKE CONCAT('%', #{dst_secondary_ip}, '%')
+        </if>
+        <if test=" dst_port != null ">
+            AND A.DST_PORT LIKE CONCAT('%', #{dst_port}, '%')
+        </if>
+        <if test='asp_type != "null" and asp_type != null and asp_type != ""'>
+            AND A.ASP_TYPE LIKE CONCAT('%', #{asp_type}, '%')
+        </if>
+        <if test='si != "null" and si != null and si != ""'>
+            AND A.SI LIKE CONCAT('%', #{si}, '%')
+        </if>
+        <if test='routing_cpu != "null" and routing_cpu != null and routing_cpu != ""'>
+            AND A.ROUTING_CPU LIKE CONCAT('%', #{routing_cpu}, '%')
+        </if>
+        <if test=' status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+    </select>
+
+
+    <!-- Link 정보 리스트  취득 -->
+    <select id="getM3uaInfoList" resultType="M3uaInfo" parameterType="M3uaSearchInfo">
+        SELECT A.SORTSEQ
+        ,A.LOCALITY
+        , FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY_NM
+        ,A.IF_TYPE
+        ,A.COUNTRY_NM
+        ,A.CARRIER_NM
+        ,A.APC
+        ,A.ASP_ID
+        ,A.LOC_BOUNDARY
+        ,A.NA
+        ,A.SLC
+        ,A.CLLI
+        ,A.ROUTING_CONTEXT
+        ,A.SRC_PRIMARY_IP
+        ,A.SRC_SECONDARY_IP
+        ,A.SRC_PORT
+        ,A.DST_PRIMARY_IP
+        ,A.DST_SECONDARY_IP
+        ,A.DST_PORT
+        ,A.ASP_TYPE
+        ,A.SI
+        ,A.ROUTING_CPU
+        ,A.STATUS
+        ,FNC_GET_GRCODE_NAME_EX('LINK_STATUS',A.STATUS,#{user_lang}) AS STATUS_NM
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        ,A.DSBD_YN
+        ,FNC_GET_GRCODE_NAME_EX('W001',A.DSBD_YN,#{user_lang}) AS DSBD_YN_NM
+        FROM
+        conf_m3ua_mst A
+        WHERE 1=1
+        <if test='srch_sortseq != "null" and srch_sortseq != null and srch_sortseq != ""'>
+            AND A.SORTSEQ LIKE CONCAT('%', #{srch_sortseq}, '%')
+        </if>
+        <if test='locality != "null" and locality != null and locality != ""'>
+            AND A.LOCALITY = #{locality}
+        </if>
+        <if test='if_type != "null" and if_type != null and if_type != ""'>
+            AND A.IF_TYPE LIKE CONCAT('%', #{if_type}, '%')
+        </if>
+        <if test='country_nm != "null" and country_nm != null and country_nm != ""'>
+            AND A.COUNTRY_NM LIKE CONCAT('%', #{country_nm}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='apc != "null" and apc != null and apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{apc}, '%')
+        </if>
+        <if test='asp_id != "null" and asp_id != null and asp_id != ""'>
+            AND A.ASP_ID LIKE CONCAT('%', #{asp_id}, '%')
+        </if>
+        <if test='loc_boundary != "null" and loc_boundary != null and loc_boundary != ""'>
+            AND A.LOC_BOUNDARY LIKE CONCAT('%', #{loc_boundary}, '%')
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test=" slc != null ">
+            AND A.SLC LIKE CONCAT('%', #{slc}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='routing_context != "null" and routing_context != null and routing_context != ""'>
+            AND A.ROUTING_CONTEXT LIKE CONCAT('%', #{routing_context}, '%')
+        </if>
+        <if test='src_primary_ip != "null" and src_primary_ip != null and src_primary_ip != ""'>
+            AND A.SRC_PRIMARY_IP LIKE CONCAT('%', #{src_primary_ip}, '%')
+        </if>
+        <if test='src_secondary_ip != "null" and src_secondary_ip != null and src_secondary_ip != ""'>
+            AND A.SRC_SECONDARY_IP LIKE CONCAT('%', #{src_secondary_ip}, '%')
+        </if>
+        <if test=" src_port != null ">
+            AND A.SRC_PORT LIKE CONCAT('%', #{src_port}, '%')
+        </if>
+        <if test='dst_primary_ip != "null" and dst_primary_ip != null and dst_primary_ip != ""'>
+            AND A.DST_PRIMARY_IP LIKE CONCAT('%', #{dst_primary_ip}, '%')
+        </if>
+        <if test='dst_secondary_ip != "null" and dst_secondary_ip != null and dst_secondary_ip != ""'>
+            AND A.DST_SECONDARY_IP LIKE CONCAT('%', #{dst_secondary_ip}, '%')
+        </if>
+        <if test=" dst_port != null ">
+            AND A.DST_PORT LIKE CONCAT('%', #{dst_port}, '%')
+        </if>
+        <if test='asp_type != "null" and asp_type != null and asp_type != ""'>
+            AND A.ASP_TYPE LIKE CONCAT('%', #{asp_type}, '%')
+        </if>
+        <if test='si != "null" and si != null and si != ""'>
+            AND A.SI LIKE CONCAT('%', #{si}, '%')
+        </if>
+        <if test='routing_cpu != "null" and routing_cpu != null and routing_cpu != ""'>
+            AND A.ROUTING_CPU LIKE CONCAT('%', #{routing_cpu}, '%')
+        </if>
+        <if test=' status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertM3ua" parameterType="M3uaInfo">
+        INSERT INTO conf_m3ua_mst (
+				SORTSEQ
+				,LOCALITY
+				,IF_TYPE
+				,COUNTRY_NM
+				,CARRIER_NM
+				,APC
+				,ASP_ID
+				,LOC_BOUNDARY
+				,NA
+				,SLC
+				,CLLI
+				,ROUTING_CONTEXT
+				,SRC_PRIMARY_IP
+				,SRC_SECONDARY_IP
+				,SRC_PORT
+				,DST_PRIMARY_IP
+				,DST_SECONDARY_IP
+				,DST_PORT
+				,ASP_TYPE
+				,SI
+				,ROUTING_CPU
+				,STATUS
+				,DSBD_YN
+               	,CRT_ID
+               	,CRT_DT
+               	,UPD_ID
+               	,UPD_DT
+               )
+        VALUES(
+           		 #{sortseq}
+				,#{locality}
+				,#{if_type}
+				,#{country_nm}
+				,#{carrier_nm}
+				,#{apc}
+				,#{asp_id}
+				,#{loc_boundary}
+				,#{na}
+				,#{slc}
+				,#{clli}
+				,#{routing_context}
+				,#{src_primary_ip}
+				,#{src_secondary_ip}
+				,#{src_port}
+				,#{dst_primary_ip}
+				,#{dst_secondary_ip}
+				,#{dst_port}
+				,#{asp_type}
+				,#{si}
+				,#{routing_cpu}
+				,#{status}
+				,#{dsbd_yn}
+	           	,#{crt_id}
+	           	,now()
+	           	,#{crt_id}
+	           	,now() 
+	              )
+    </insert>
+
+    <!-- Tdm 정보를 삭제 한다 -->
+    <delete id="deleteM3ua" parameterType="M3uaInfo">
+        DELETE FROM conf_m3ua_mst WHERE SORTSEQ = #{sortseq}
+    </delete>
+
+</mapper>
+

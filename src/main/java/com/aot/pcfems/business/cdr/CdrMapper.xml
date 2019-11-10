@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.cdr">
+
+    <!-- 진행중 리스트 갯수 취득 -->
+    <select id="getCdrIngListCnt" resultType="int" parameterType="CdrSearchInfo">
+        SELECT COUNT(1)
+        FROM (
+        SELECT
+        A.SBC_GROUP_ID
+        ,CONCAT(MS_SBC_GROUP_ID.CODENM_K, "(", A.SBC_GROUP_ID, ")") SBC_GROUP_NAME
+        ,A.H323_SETUP_TIME
+        ,A.H323_CONNECT_TIME
+        ,A.CALLING_NUMBER
+        ,A.CALLED_NUMBER
+        ,A.FROM_COUNTRY_CD
+        ,MS_FROM_COUNTRY_CD.CODENM_K FROM_COUNTRY_CD_NAME
+        ,A.TO_COUNTRY_CD
+        ,MS_TO_COUNTRY_CD.CODENM_K TO_COUNTRY_CD_NAME
+        ,A.ACCT_SESSION_ID
+        ,A.CALLING_STATION_ID
+        ,A.CALLED_STATION_ID
+        ,A.NAS_IP_ADDRESS
+        ,A.NAS_PORT
+        ,A.ACME_SESSION_INGRESS_REALM
+        ,A.ACME_SESSION_EGRESS_REALM
+        ,A.ACME_SESSION_PROTOCOL_TYPE
+        ,A.ACME_FLOWTYPE_FS1_F
+        ,A.ACME_LOCAL_TIME_ZONE
+        ,A.ACME_POST_DIAL_DELAY
+        ,A.ACME_ORIGINATING_TRUNK_GROUP
+        ,A.ACME_TERMINATING_TRUNK_GROUP
+        ,A.ACME_INGRESS_LOCAL_ADDR
+        ,A.ACME_INGRESS_REMOTE_ADDR
+        ,A.ACME_EGRESS_LOCAL_ADDR
+        ,A.ACME_EGRESS_REMOTE_ADDR
+        ,A.CLIENT_IP_ADDRESS
+        ,A.ACCT_UNIQUE_SESSION_ID
+        FROM
+        CDRS_CURRENT A
+        LEFT OUTER JOIN MGMT_SYSCOD2T MS_SBC_GROUP_ID ON MS_SBC_GROUP_ID.GRCODE="SBC_GROUP_ID" AND A.SBC_GROUP_ID=MS_SBC_GROUP_ID.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T MS_FROM_COUNTRY_CD ON MS_FROM_COUNTRY_CD.GRCODE="COUNTRY_CD" AND A.FROM_COUNTRY_CD=MS_FROM_COUNTRY_CD.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T MS_TO_COUNTRY_CD ON MS_TO_COUNTRY_CD.GRCODE="COUNTRY_CD" AND A.TO_COUNTRY_CD=MS_TO_COUNTRY_CD.CODE
+        WHERE 1=1
+        AND DATE_FORMAT(A.H323_SETUP_TIME, '%Y%m%d%H%i') <![CDATA[>=]]> #{srch_date_from} AND DATE_FORMAT(A.H323_SETUP_TIME, '%Y%m%d%H%i') <![CDATA[<=]]> #{srch_date_to}
+        <if test='srch_sbc_group_id  != "null" and srch_sbc_group_id != null and srch_sbc_group_id != ""'>
+            AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        </if>
+        AND NOW() - IFNULL(A.H323_CONNECT_TIME, A.H323_SETUP_TIME) <![CDATA[>=]]> #{srch_ing_time_s}
+        ) T
+        WHERE 1=1
+        <if test='sbc_group_name != "null" and sbc_group_name != null and sbc_group_name != ""'>
+            AND T.SBC_GROUP_NAME LIKE CONCAT('%', #{sbc_group_name}, '%')
+        </if>
+        <if test='h323_setup_time != "null" and h323_setup_time != null and h323_setup_time != ""'>
+            AND T.H323_SETUP_TIME LIKE CONCAT('%', #{h323_setup_time}, '%')
+        </if>
+        <if test='h323_connect_time != "null" and h323_connect_time != null and h323_connect_time != ""'>
+            AND T.H323_CONNECT_TIME LIKE CONCAT('%', #{h323_connect_time}, '%')
+        </if>
+        <if test='calling_number != "null" and calling_number != null and calling_number != ""'>
+            AND T.CALLING_NUMBER LIKE CONCAT('%', #{calling_number}, '%')
+        </if>
+        <if test='called_number != "null" and called_number != null and called_number != ""'>
+            AND T.CALLED_NUMBER LIKE CONCAT('%', #{called_number}, '%')
+        </if>
+        <if test='from_country_cd_name != "null" and from_country_cd_name != null and from_country_cd_name != ""'>
+            AND T.FROM_COUNTRY_CD_NAME LIKE CONCAT('%', #{from_country_cd_name}, '%')
+        </if>
+        <if test='to_country_cd_name != "null" and to_country_cd_name != null and to_country_cd_name != ""'>
+            AND T.TO_COUNTRY_CD_NAME LIKE CONCAT('%', #{to_country_cd_name}, '%')
+        </if>
+        <if test='acct_session_id != "null" and acct_session_id != null and acct_session_id != ""'>
+            AND T.ACCT_SESSION_ID LIKE CONCAT('%', #{acct_session_id}, '%')
+        </if>
+        <if test='calling_station_id != "null" and calling_station_id != null and calling_station_id != ""'>
+            AND T.CALLING_STATION_ID LIKE CONCAT('%', #{calling_station_id}, '%')
+        </if>
+        <if test='called_station_id != "null" and called_station_id != null and called_station_id != ""'>
+            AND T.CALLED_STATION_ID LIKE CONCAT('%', #{called_station_id}, '%')
+        </if>
+        <if test='nas_ip_address != "null" and nas_ip_address != null and nas_ip_address != ""'>
+            AND T.NAS_IP_ADDRESS LIKE CONCAT('%', #{nas_ip_address}, '%')
+        </if>
+        <if test='nas_port != "null" and nas_port != null and nas_port != ""'>
+            AND T.NAS_PORT LIKE CONCAT('%', #{nas_port}, '%')
+        </if>
+        <if test='acme_session_ingress_realm != "null" and acme_session_ingress_realm != null and acme_session_ingress_realm != ""'>
+            AND T.ACME_SESSION_INGRESS_REALM LIKE CONCAT('%', #{acme_session_ingress_realm}, '%')
+        </if>
+        <if test='acme_session_egress_realm != "null" and acme_session_egress_realm != null and acme_session_egress_realm != ""'>
+            AND T.ACME_SESSION_EGRESS_REALM LIKE CONCAT('%', #{acme_session_egress_realm}, '%')
+        </if>
+        <if test='acme_session_protocol_type != "null" and acme_session_protocol_type != null and acme_session_protocol_type != ""'>
+            AND T.ACME_SESSION_PROTOCOL_TYPE LIKE CONCAT('%', #{acme_session_protocol_type}, '%')
+        </if>
+        <if test='acme_flowtype_fs1_f != "null" and acme_flowtype_fs1_f != null and acme_flowtype_fs1_f != ""'>
+            AND T.ACME_FLOWTYPE_FS1_F LIKE CONCAT('%', #{acme_flowtype_fs1_f}, '%')
+        </if>
+        <if test='acme_local_time_zone != "null" and acme_local_time_zone != null and acme_local_time_zone != ""'>
+            AND T.ACME_LOCAL_TIME_ZONE LIKE CONCAT('%', #{acme_local_time_zone}, '%')
+        </if>
+        <if test='acme_post_dial_delay != "null" and acme_post_dial_delay != null and acme_post_dial_delay != ""'>
+            AND T.ACME_POST_DIAL_DELAY LIKE CONCAT('%', #{acme_post_dial_delay}, '%')
+        </if>
+        <if test='acme_originating_trunk_group != "null" and acme_originating_trunk_group != null and acme_originating_trunk_group != ""'>
+            AND T.ACME_ORIGINATING_TRUNK_GROUP LIKE CONCAT('%', #{acme_originating_trunk_group}, '%')
+        </if>
+        <if test='acme_terminating_trunk_group != "null" and acme_terminating_trunk_group != null and acme_terminating_trunk_group != ""'>
+            AND T.ACME_TERMINATING_TRUNK_GROUP LIKE CONCAT('%', #{acme_terminating_trunk_group}, '%')
+        </if>
+        <if test='acme_ingress_local_addr != "null" and acme_ingress_local_addr != null and acme_ingress_local_addr != ""'>
+            AND T.ACME_INGRESS_LOCAL_ADDR LIKE CONCAT('%', #{acme_ingress_local_addr}, '%')
+        </if>
+        <if test='acme_ingress_remote_addr != "null" and acme_ingress_remote_addr != null and acme_ingress_remote_addr != ""'>
+            AND T.ACME_INGRESS_REMOTE_ADDR LIKE CONCAT('%', #{acme_ingress_remote_addr}, '%')
+        </if>
+        <if test='acme_egress_local_addr != "null" and acme_egress_local_addr != null and acme_egress_local_addr != ""'>
+            AND T.ACME_EGRESS_LOCAL_ADDR LIKE CONCAT('%', #{acme_egress_local_addr}, '%')
+        </if>
+        <if test='acme_egress_remote_addr != "null" and acme_egress_remote_addr != null and acme_egress_remote_addr != ""'>
+            AND T.ACME_EGRESS_REMOTE_ADDR LIKE CONCAT('%', #{acme_egress_remote_addr}, '%')
+        </if>
+        <if test='client_ip_address != "null" and client_ip_address != null and client_ip_address != ""'>
+            AND T.CLIENT_IP_ADDRESS LIKE CONCAT('%', #{client_ip_address}, '%')
+        </if>
+        <if test='acct_unique_session_id != "null" and acct_unique_session_id != null and acct_unique_session_id != ""'>
+            AND T.ACCT_UNIQUE_SESSION_ID LIKE CONCAT('%', #{acct_unique_session_id}, '%')
+        </if>
+    </select>
+
+    <!-- 진행중 리스트  취득 -->
+    <select id="getCdrIngList" resultType="CdrInfo" parameterType="CdrSearchInfo">
+        SELECT
+        T.SBC_GROUP_ID
+        ,T.SBC_GROUP_NAME
+        ,T.H323_SETUP_TIME
+        ,T.H323_CONNECT_TIME
+        ,T.CALLING_NUMBER
+        ,T.CALLED_NUMBER
+        ,T.FROM_COUNTRY_CD
+        ,T.FROM_COUNTRY_CD_NAME
+        ,T.TO_COUNTRY_CD
+        ,T.TO_COUNTRY_CD_NAME
+        ,T.ACCT_SESSION_ID
+        ,T.CALLING_STATION_ID
+        ,T.CALLED_STATION_ID
+        ,T.NAS_IP_ADDRESS
+        ,T.NAS_PORT
+        ,T.ACME_SESSION_INGRESS_REALM
+        ,T.ACME_SESSION_EGRESS_REALM
+        ,T.ACME_SESSION_PROTOCOL_TYPE
+        ,T.ACME_FLOWTYPE_FS1_F
+        ,T.ACME_LOCAL_TIME_ZONE
+        ,T.ACME_POST_DIAL_DELAY
+        ,T.ACME_ORIGINATING_TRUNK_GROUP
+        ,T.ACME_TERMINATING_TRUNK_GROUP
+        ,T.ACME_INGRESS_LOCAL_ADDR
+        ,T.ACME_INGRESS_REMOTE_ADDR
+        ,T.ACME_EGRESS_LOCAL_ADDR
+        ,T.ACME_EGRESS_REMOTE_ADDR
+        ,T.CLIENT_IP_ADDRESS
+        ,T.ACCT_UNIQUE_SESSION_ID
+        FROM (
+        SELECT
+        A.SBC_GROUP_ID
+        ,CONCAT(MS_SBC_GROUP_ID.CODENM_K, "(", A.SBC_GROUP_ID, ")") SBC_GROUP_NAME
+        ,A.H323_SETUP_TIME
+        ,A.H323_CONNECT_TIME
+        ,A.CALLING_NUMBER
+        ,A.CALLED_NUMBER
+        ,A.FROM_COUNTRY_CD
+        ,MS_FROM_COUNTRY_CD.CODENM_K FROM_COUNTRY_CD_NAME
+        ,A.TO_COUNTRY_CD
+        ,MS_TO_COUNTRY_CD.CODENM_K TO_COUNTRY_CD_NAME
+        ,A.ACCT_SESSION_ID
+        ,A.CALLING_STATION_ID
+        ,A.CALLED_STATION_ID
+        ,A.NAS_IP_ADDRESS
+        ,A.NAS_PORT
+        ,A.ACME_SESSION_INGRESS_REALM
+        ,A.ACME_SESSION_EGRESS_REALM
+        ,A.ACME_SESSION_PROTOCOL_TYPE
+        ,A.ACME_FLOWTYPE_FS1_F
+        ,A.ACME_LOCAL_TIME_ZONE
+        ,A.ACME_POST_DIAL_DELAY
+        ,A.ACME_ORIGINATING_TRUNK_GROUP
+        ,A.ACME_TERMINATING_TRUNK_GROUP
+        ,A.ACME_INGRESS_LOCAL_ADDR
+        ,A.ACME_INGRESS_REMOTE_ADDR
+        ,A.ACME_EGRESS_LOCAL_ADDR
+        ,A.ACME_EGRESS_REMOTE_ADDR
+        ,A.CLIENT_IP_ADDRESS
+        ,A.ACCT_UNIQUE_SESSION_ID
+        FROM
+        CDRS_CURRENT A
+        LEFT OUTER JOIN MGMT_SYSCOD2T MS_SBC_GROUP_ID ON MS_SBC_GROUP_ID.GRCODE="SBC_GROUP_ID" AND A.SBC_GROUP_ID=MS_SBC_GROUP_ID.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T MS_FROM_COUNTRY_CD ON MS_FROM_COUNTRY_CD.GRCODE="COUNTRY_CD" AND A.FROM_COUNTRY_CD=MS_FROM_COUNTRY_CD.CODE
+        LEFT OUTER JOIN MGMT_SYSCOD2T MS_TO_COUNTRY_CD ON MS_TO_COUNTRY_CD.GRCODE="COUNTRY_CD" AND A.TO_COUNTRY_CD=MS_TO_COUNTRY_CD.CODE
+        WHERE 1=1
+        AND DATE_FORMAT(A.H323_SETUP_TIME, '%Y%m%d%H%i') <![CDATA[>=]]> #{srch_date_from} AND DATE_FORMAT(A.H323_SETUP_TIME, '%Y%m%d%H%i') <![CDATA[<=]]> #{srch_date_to}
+        <if test='srch_sbc_group_id  != "null" and srch_sbc_group_id != null and srch_sbc_group_id != ""'>
+            AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        </if>
+        AND NOW() - IFNULL(A.H323_CONNECT_TIME, A.H323_SETUP_TIME) <![CDATA[>=]]> #{srch_ing_time_s}
+        ) T
+        WHERE 1=1
+        <if test='sbc_group_name != "null" and sbc_group_name != null and sbc_group_name != ""'>
+            AND T.SBC_GROUP_NAME LIKE CONCAT('%', #{sbc_group_name}, '%')
+        </if>
+        <if test='h323_setup_time != "null" and h323_setup_time != null and h323_setup_time != ""'>
+            AND T.H323_SETUP_TIME LIKE CONCAT('%', #{h323_setup_time}, '%')
+        </if>
+        <if test='h323_connect_time != "null" and h323_connect_time != null and h323_connect_time != ""'>
+            AND T.H323_CONNECT_TIME LIKE CONCAT('%', #{h323_connect_time}, '%')
+        </if>
+        <if test='calling_number != "null" and calling_number != null and calling_number != ""'>
+            AND T.CALLING_NUMBER LIKE CONCAT('%', #{calling_number}, '%')
+        </if>
+        <if test='called_number != "null" and called_number != null and called_number != ""'>
+            AND T.CALLED_NUMBER LIKE CONCAT('%', #{called_number}, '%')
+        </if>
+        <if test='from_country_cd_name != "null" and from_country_cd_name != null and from_country_cd_name != ""'>
+            AND T.FROM_COUNTRY_CD_NAME LIKE CONCAT('%', #{from_country_cd_name}, '%')
+        </if>
+        <if test='to_country_cd_name != "null" and to_country_cd_name != null and to_country_cd_name != ""'>
+            AND T.TO_COUNTRY_CD_NAME LIKE CONCAT('%', #{to_country_cd_name}, '%')
+        </if>
+        <if test='acct_session_id != "null" and acct_session_id != null and acct_session_id != ""'>
+            AND T.ACCT_SESSION_ID LIKE CONCAT('%', #{acct_session_id}, '%')
+        </if>
+        <if test='calling_station_id != "null" and calling_station_id != null and calling_station_id != ""'>
+            AND T.CALLING_STATION_ID LIKE CONCAT('%', #{calling_station_id}, '%')
+        </if>
+        <if test='called_station_id != "null" and called_station_id != null and called_station_id != ""'>
+            AND T.CALLED_STATION_ID LIKE CONCAT('%', #{called_station_id}, '%')
+        </if>
+        <if test='nas_ip_address != "null" and nas_ip_address != null and nas_ip_address != ""'>
+            AND T.NAS_IP_ADDRESS LIKE CONCAT('%', #{nas_ip_address}, '%')
+        </if>
+        <if test='nas_port != "null" and nas_port != null and nas_port != ""'>
+            AND T.NAS_PORT LIKE CONCAT('%', #{nas_port}, '%')
+        </if>
+        <if test='acme_session_ingress_realm != "null" and acme_session_ingress_realm != null and acme_session_ingress_realm != ""'>
+            AND T.ACME_SESSION_INGRESS_REALM LIKE CONCAT('%', #{acme_session_ingress_realm}, '%')
+        </if>
+        <if test='acme_session_egress_realm != "null" and acme_session_egress_realm != null and acme_session_egress_realm != ""'>
+            AND T.ACME_SESSION_EGRESS_REALM LIKE CONCAT('%', #{acme_session_egress_realm}, '%')
+        </if>
+        <if test='acme_session_protocol_type != "null" and acme_session_protocol_type != null and acme_session_protocol_type != ""'>
+            AND T.ACME_SESSION_PROTOCOL_TYPE LIKE CONCAT('%', #{acme_session_protocol_type}, '%')
+        </if>
+        <if test='acme_flowtype_fs1_f != "null" and acme_flowtype_fs1_f != null and acme_flowtype_fs1_f != ""'>
+            AND T.ACME_FLOWTYPE_FS1_F LIKE CONCAT('%', #{acme_flowtype_fs1_f}, '%')
+        </if>
+        <if test='acme_local_time_zone != "null" and acme_local_time_zone != null and acme_local_time_zone != ""'>
+            AND T.ACME_LOCAL_TIME_ZONE LIKE CONCAT('%', #{acme_local_time_zone}, '%')
+        </if>
+        <if test='acme_post_dial_delay != "null" and acme_post_dial_delay != null and acme_post_dial_delay != ""'>
+            AND T.ACME_POST_DIAL_DELAY LIKE CONCAT('%', #{acme_post_dial_delay}, '%')
+        </if>
+        <if test='acme_originating_trunk_group != "null" and acme_originating_trunk_group != null and acme_originating_trunk_group != ""'>
+            AND T.ACME_ORIGINATING_TRUNK_GROUP LIKE CONCAT('%', #{acme_originating_trunk_group}, '%')
+        </if>
+        <if test='acme_terminating_trunk_group != "null" and acme_terminating_trunk_group != null and acme_terminating_trunk_group != ""'>
+            AND T.ACME_TERMINATING_TRUNK_GROUP LIKE CONCAT('%', #{acme_terminating_trunk_group}, '%')
+        </if>
+        <if test='acme_ingress_local_addr != "null" and acme_ingress_local_addr != null and acme_ingress_local_addr != ""'>
+            AND T.ACME_INGRESS_LOCAL_ADDR LIKE CONCAT('%', #{acme_ingress_local_addr}, '%')
+        </if>
+        <if test='acme_ingress_remote_addr != "null" and acme_ingress_remote_addr != null and acme_ingress_remote_addr != ""'>
+            AND T.ACME_INGRESS_REMOTE_ADDR LIKE CONCAT('%', #{acme_ingress_remote_addr}, '%')
+        </if>
+        <if test='acme_egress_local_addr != "null" and acme_egress_local_addr != null and acme_egress_local_addr != ""'>
+            AND T.ACME_EGRESS_LOCAL_ADDR LIKE CONCAT('%', #{acme_egress_local_addr}, '%')
+        </if>
+        <if test='acme_egress_remote_addr != "null" and acme_egress_remote_addr != null and acme_egress_remote_addr != ""'>
+            AND T.ACME_EGRESS_REMOTE_ADDR LIKE CONCAT('%', #{acme_egress_remote_addr}, '%')
+        </if>
+        <if test='client_ip_address != "null" and client_ip_address != null and client_ip_address != ""'>
+            AND T.CLIENT_IP_ADDRESS LIKE CONCAT('%', #{client_ip_address}, '%')
+        </if>
+        <if test='acct_unique_session_id != "null" and acct_unique_session_id != null and acct_unique_session_id != ""'>
+            AND T.ACCT_UNIQUE_SESSION_ID LIKE CONCAT('%', #{acct_unique_session_id}, '%')
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+
+</mapper>
+

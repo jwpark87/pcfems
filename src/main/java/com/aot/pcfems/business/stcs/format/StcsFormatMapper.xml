@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.stcs.format">
+
+    <select id="getSrchFormatMstCnt" resultType="Integer" parameterType="StcsFormatVO">
+        SELECT
+        COUNT(1) CNT
+        FROM srch_format_mst SFM
+        <where>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( index_type )">
+                AND SFM.INDEX_TYPE LIKE CONCAT('%', #{index_type, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( format_name )">
+                AND FORMAT_NAME LIKE CONCAT('%', #{format_name, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( es_base_url )">
+                AND ES_BASE_URL LIKE CONCAT('%', #{es_base_url, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( def_col_id )">
+                AND DEF_COL_ID LIKE CONCAT('%', #{def_col_id, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( def_fromdt )">
+                AND DEF_FROMDT LIKE CONCAT('%', #{def_fromdt, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( def_todt )">
+                AND DEF_TODT LIKE CONCAT('%', #{def_todt, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( crt_id )">
+                AND CRT_ID LIKE CONCAT('%', #{crt_id, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( upd_id )">
+                AND UPD_ID LIKE CONCAT('%', #{upd_id, jdbcType=VARCHAR}, '%')
+            </if>
+        </where>
+    </select>
+    <select id="getSrchFormatMstList" resultType="StcsFormatVO" parameterType="StcsFormatVO">
+        SELECT
+        SFM.*
+        FROM srch_format_mst SFM
+        <where>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( index_type )">
+                AND SFM.INDEX_TYPE LIKE CONCAT('%', #{index_type, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( format_name )">
+                AND FORMAT_NAME LIKE CONCAT('%', #{format_name, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( es_base_url )">
+                AND ES_BASE_URL LIKE CONCAT('%', #{es_base_url, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( def_col_id )">
+                AND DEF_COL_ID LIKE CONCAT('%', #{def_col_id, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( def_fromdt )">
+                AND DEF_FROMDT LIKE CONCAT('%', #{def_fromdt, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( def_todt )">
+                AND DEF_TODT LIKE CONCAT('%', #{def_todt, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( crt_id )">
+                AND CRT_ID LIKE CONCAT('%', #{crt_id, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( upd_id )">
+                AND UPD_ID LIKE CONCAT('%', #{upd_id, jdbcType=VARCHAR}, '%')
+            </if>
+        </where>
+        ORDER BY ${jqSidx} ${jqSord}
+        LIMIT #{startPageIndex} , #{endPageIndex}
+    </select>
+
+    <select id="getSrchFormatDetCnt" resultType="Integer" parameterType="StcsFormatVO">
+        SELECT
+        COUNT(1) CNT
+        FROM srch_format_det SFD
+        <where>
+            AND SFD.INDEX_TYPE = #{index_type, jdbcType=VARCHAR}
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( col_cd )">
+                AND COL_CD LIKE CONCAT('%', #{col_cd, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( col_nm )">
+                AND COL_NM LIKE CONCAT('%', #{col_nm, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( text_align )">
+                AND TEXT_ALIGN LIKE CONCAT('%', #{text_align, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( grcode )">
+                AND GRCODE LIKE CONCAT('%', #{grcode, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( search_yn )">
+                AND SEARCH_YN LIKE CONCAT('%', #{search_yn, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="sortseq != null">
+                AND SORTSEQ = #{sortseq, jdbcType=SMALLINT}
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( use_yn )">
+                AND USE_YN LIKE CONCAT('%', #{use_yn, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( threshold_yn )">
+                AND threshold_yn LIKE CONCAT('%', #{threshold_yn, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( op_code )">
+                AND op_code LIKE CONCAT('%', #{op_code, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( op_value )">
+                AND op_value LIKE CONCAT('%', #{op_value, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_code )">
+                AND alm_code LIKE CONCAT('%', #{alm_code, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_msg )">
+                AND alm_msg LIKE CONCAT('%', #{alm_msg, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( remark1 )">
+                AND remark1 LIKE CONCAT('%', #{remark1, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( crt_id )">
+                AND CRT_ID LIKE CONCAT('%', #{crt_id, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( upd_id )">
+                AND UPD_ID LIKE CONCAT('%', #{upd_id, jdbcType=VARCHAR}, '%')
+            </if>
+        </where>
+    </select>
+    <select id="getSrchFormatDetList" resultType="StcsFormatVO" parameterType="StcsFormatVO">
+        SELECT
+        SFD.*
+        FROM srch_format_det SFD
+        <where>
+            AND SFD.INDEX_TYPE = #{index_type, jdbcType=VARCHAR}
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( col_cd )">
+                AND COL_CD LIKE CONCAT('%', #{col_cd, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( col_nm )">
+                AND COL_NM LIKE CONCAT('%', #{col_nm, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( text_align )">
+                AND TEXT_ALIGN LIKE CONCAT('%', #{text_align, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( grcode )">
+                AND GRCODE LIKE CONCAT('%', #{grcode, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( search_yn )">
+                AND SEARCH_YN LIKE CONCAT('%', #{search_yn, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="sortseq != null">
+                AND SORTSEQ = #{sortseq, jdbcType=SMALLINT}
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( use_yn )">
+                AND USE_YN LIKE CONCAT('%', #{use_yn, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( threshold_yn )">
+                AND threshold_yn LIKE CONCAT('%', #{threshold_yn, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( op_code )">
+                AND op_code LIKE CONCAT('%', #{op_code, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( op_value )">
+                AND op_value LIKE CONCAT('%', #{op_value, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_code )">
+                AND alm_code LIKE CONCAT('%', #{alm_code, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_msg )">
+                AND alm_msg LIKE CONCAT('%', #{alm_msg, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( remark1 )">
+                AND remark1 LIKE CONCAT('%', #{remark1, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( crt_id )">
+                AND CRT_ID LIKE CONCAT('%', #{crt_id, jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( upd_id )">
+                AND UPD_ID LIKE CONCAT('%', #{upd_id, jdbcType=VARCHAR}, '%')
+            </if>
+        </where>
+        ORDER BY ${jqSidx} ${jqSord}
+        LIMIT #{startPageIndex} , #{endPageIndex}
+    </select>
+    <select id="getGrcodeValueLabelList" resultType="ValueLabelVO">
+		SELECT MS1.GRCODE AS VALUE, IFNULL(MS1.GRCODENM_K, MS1.GRCODENM) AS LABEL
+		FROM mgmt_syscod1t MS1
+		ORDER BY MS1.GRCODE
+    </select>
+
+</mapper>
+

@@ -1,0 +1,12 @@
+@CHARSET "UTF-8";
+
+.pace .pace-activity {
+    border-left-color: #7DC27D;
+    border-top-color: #7DC27D;
+}
+
+.pace .pace-progress {
+    background-color: #7DC27D;
+    border: solid 24px transparent;
+    opacity: 0.2;
+}

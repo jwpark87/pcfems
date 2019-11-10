@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.stcs.summary.StcsSummaryDAO">
+
+    <!-- 조회 통합 기본값 취득 -->
+    <select id="getVarStatsDefaultInfo" resultType="VarStats" parameterType="VarStatsSearchInfo">     
+	        SELECT
+	            INDEX_TYPE, FORMAT_NAME, ES_BASE_URL, OUT_COL_IDS, OUT_COL_NAMES, out_col_types, DEF_COL_ID,	            
+	            DATE_FORMAT(DEF_FROMDT,'%Y-%m-%d%H%i') AS DEF_FROMDT,
+	            DATE_FORMAT(DEF_TODT,'%Y-%m-%d%H%i') AS DEF_TODT,
+	            TOTAL_ROW_CNT,
+				DATE_FORMAT(OLDEST_DT,'%Y-%m-%d %H:%i:%s') AS OLDEST_DT,
+				DATE_FORMAT(NEWEST_DT,'%Y-%m-%d %H:%i:%s') AS NEWEST_DT
+	        FROM
+	             vw_srch_format_multi_mst
+	        WHERE 1=1
+	    	    AND index_group = #{srch_index_type}
+	    	ORDER BY SORTSEQ
+    </select>
+
+    <!-- 컬럼 리스트 취득 -->
+    <select id="getVarStatsColumnList" resultType="VarStats" parameterType="VarStatsSearchInfo">     
+	        SELECT
+	            INDEX_TYPE, COL_CD, COL_NM, TEXT_ALIGN, GRCODE, DSP_WIDTH, SEARCH_YN, SORTSEQ
+	        FROM
+	             srch_format_multi_det
+	        WHERE 1=1
+	    	    AND INDEX_TYPE = #{srch_index_type}
+	    	    AND USE_YN 		= 'Y'
+	    	 ORDER BY SORTSEQ
+    </select>
+
+
+    <resultMap id="VarStatsFilterMap" type="CodeInfo">
+        <result property="code" column="CODE"/>
+        <result property="codenm_k" column="CODENM_KOR"/>
+        <result property="codenm_e" column="CODENM_ENG"/>
+        <result property="codenm_j" column="CODENM_JPN"/>
+    </resultMap>
+    <!-- 필터 컬럼 리스트 취득 -->
+    <select id="getVarStatsFilterColumnList" resultMap="VarStatsFilterMap" parameterType="VarStatsSearchInfo">     
+	        SELECT
+	            COL_CD AS CODE
+	            ,COL_NM AS CODENM_KOR
+   	        	,COL_NM AS CODENM_ENG
+   	        	,COL_NM AS CODENM_JPN
+	        FROM
+	             srch_format_multi_det
+	        WHERE 1=1
+	    	    AND INDEX_TYPE = #{srch_index_type}
+	    	    AND USE_YN 		= 'Y'
+	    	    AND SEARCH_YN  = 'Y'
+	    	 ORDER BY SORTSEQ
+    </select>
+
+</mapper>
+

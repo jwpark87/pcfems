@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.stcs.usage">
+
+    <!-- Usage정보 매핑을 설정 -->
+    <resultMap id="UsageMap" type="CodeInfo">
+        <result property="code" column="CODE"/>
+        <result property="codenm_k" column="CODENM_KOR"/>
+        <result property="codenm_e" column="CODENM_ENG"/>
+        <result property="codenm_j" column="CODENM_JPN"/>
+    </resultMap>
+    <!-- SBC설정정보 리스트  취득 -->
+    <select id="getSbcCodeInfoList" resultMap="UsageMap" parameterType="UsageSearchInfo">
+		SELECT
+             A.SBC_NODE_IP CODE
+   	        ,CONCAT("[", FNC_GET_GRCODE_NAME_EX("SBC_GROUP_ID", A.SBC_GROUP_ID, "KOR"), "]", A.SBC_NODE_NAME , "(", A.SBC_NODE_IP, ")") CODENM_KOR
+   	        ,CONCAT("[", FNC_GET_GRCODE_NAME_EX("SBC_GROUP_ID", A.SBC_GROUP_ID, "ENG"), "]", A.SBC_NODE_NAME , "(", A.SBC_NODE_IP, ")") CODENM_ENG
+   	        ,CONCAT("[", FNC_GET_GRCODE_NAME_EX("SBC_GROUP_ID", A.SBC_GROUP_ID, "JPN"), "]", A.SBC_NODE_NAME , "(", A.SBC_NODE_IP, ")") CODENM_JPN
+		FROM 
+             COMM_SBC_MST A
+		WHERE 1=1
+          ORDER BY CODENM_${user_lang}
+	</select>
+
+
+</mapper>
+

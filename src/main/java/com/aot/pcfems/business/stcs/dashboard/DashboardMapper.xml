@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aot.pcfems.business.stcs.dashboard">
+
+
+    <!-- 대시보드 그룹 리스트  취득 -->
+    <select id="getDashboardGrpList" resultType="DashboardVO" parameterType="DashboardSearchInfo">
+		SELECT A.DSBD_GROUP_ID, A.DSBD_GROUP_NAME, A.INDEX_TYPE, A.SORTSEQ
+		  FROM dsbd_grp A
+		WHERE A.INDEX_TYPE = #{srch_index_type}
+		    AND A.USE_YN = 'Y'
+		ORDER BY A.SORTSEQ
+	</select>
+
+    <!-- 대시보드 아이템 리스트  취득 -->
+    <select id="getDashboardItemList" resultType="DashboardVO" parameterType="DashboardSearchInfo">
+		SELECT A.DSBD_GROUP_ID,
+		           B.DSBD_ITEM_ID,
+		           B.DSBD_ITEM_NAME,
+		           B.DSBD_ITEM_TYPE,
+		           B.DSBD_ITEM_WIDTH,
+		           B.DSBD_ITEM_HEIGHT,
+		           B.SORTSEQ
+		FROM dsbd_grp A, dsbd_item B
+		WHERE A.DSBD_GROUP_ID = B.DSBD_GROUP_ID
+		    AND A.INDEX_TYPE = #{srch_index_type}
+		    AND A.USE_YN = 'Y' 
+		    AND B.USE_YN = 'Y' 
+		ORDER BY A.SORTSEQ,B.SORTSEQ		
+	</select>
+
+    <!-- 대시보드 데이타 리스트  취득 -->
+    <select id="getDashboardItemDataList" resultType="DashboardVO" parameterType="DashboardSearchInfo">
+		  SELECT A.DSBD_ITEM_ID,A.DATA_NAME, A.XVAL, A.YVAL, A.SORTSEQ
+			FROM dsbd_item_data A, dsbd_item B
+			WHERE A.DSBD_ITEM_ID = B.DSBD_ITEM_ID    
+			AND EXISTS (
+			  				SELECT 1
+							  FROM dsbd_grp A
+							 WHERE A.INDEX_TYPE = #{srch_index_type}
+			    				 AND A.USE_YN = 'Y'
+			    				 AND A.DSBD_GROUP_ID = B.DSBD_GROUP_ID
+				)
+			AND B.USE_YN = 'Y'
+			ORDER BY A.DSBD_ITEM_ID,A.DATA_NAME,A.SORTSEQ
+	</select>
+
+</mapper>
+

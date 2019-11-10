@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.setting.gt">
+
+    <!-- Gt 존재 체크 -->
+    <select id="getGtExist" resultType="String" parameterType="GtInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_gt_mst
+                      WHERE GT = #{gt})
+	</select>
+
+    <!-- Gt 설정정보 취득 -->
+    <select id="getGtDetail" resultType="GtInfo" parameterType="GtInfo">
+         SELECT
+             A.GT, A.PC_LIST_NM, A.CARRIER_NM
+            ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+            ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+            , A.DB_NAME , A.COUNTRY,A.DSBD_YN
+         FROM conf_gt_mst A
+         WHERE A.GT  = #{gt}
+    </select>
+
+    <!-- Gt 설정정보를 갱신 한다 -->
+    <update id="updateGt" parameterType="GtInfo">
+     UPDATE conf_gt_mst
+         SET         	 
+         	PC_LIST_NM	= #{pc_list_nm},
+         	CARRIER_NM	= #{carrier_nm},
+         	DB_NAME		= #{db_name},
+            COUNTRY		= #{country},
+            DSBD_YN		= #{dsbd_yn},
+            UPD_ID  			= #{upd_id},
+            UPD_DT  		= now()
+        WHERE GT			= #{gt}
+    </update>
+
+    <!-- Gt 정보 리스트 갯수 취득 -->
+    <select id="getGtInfoListCount" resultType="int" parameterType="GtSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_gt_mst A
+        WHERE 1=1
+        <if test='db_name != "null" and db_name != null and db_name != ""'>
+            AND A.DB_NAME LIKE CONCAT('%', #{db_name}, '%')
+        </if>
+        <if test='srch_gt != "null" and srch_gt != null and srch_gt != ""'>
+            AND A.GT LIKE CONCAT('%', #{srch_gt}, '%')
+        </if>
+        <if test='pc_list_nm != "null" and pc_list_nm != null and pc_list_nm != ""'>
+            AND A.PC_LIST_NM LIKE CONCAT('%', #{pc_list_nm}, '%')
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+    </select>
+
+
+    <!-- Gt 정보 리스트  취득 -->
+    <select id="getGtInfoList" resultType="GtInfo" parameterType="GtSearchInfo">
+        SELECT
+        A.GT, A.PC_LIST_NM, A.CARRIER_NM
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        ,A.DB_NAME
+        ,A.COUNTRY
+        ,A.DSBD_YN
+        ,FNC_GET_GRCODE_NAME_EX('W001',A.DSBD_YN,#{user_lang}) AS DSBD_YN_NM
+        FROM
+        conf_gt_mst A
+        WHERE 1=1
+        <if test='db_name != "null" and db_name != null and db_name != ""'>
+            AND A.DB_NAME LIKE CONCAT('%', #{db_name}, '%')
+        </if>
+        <if test='srch_gt != "null" and srch_gt != null and srch_gt != ""'>
+            AND A.GT LIKE CONCAT('%', #{srch_gt}, '%')
+        </if>
+        <if test='pc_list_nm != "null" and pc_list_nm != null and pc_list_nm != ""'>
+            AND A.PC_LIST_NM LIKE CONCAT('%', #{pc_list_nm}, '%')
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertGt" parameterType="GtInfo">
+        INSERT INTO conf_gt_mst (
+               GT
+               ,PC_LIST_NM
+         	   ,CARRIER_NM
+         	   ,DB_NAME 
+         	   ,COUNTRY
+         	   ,DSBD_YN
+               ,CRT_ID
+               ,CRT_DT
+               ,UPD_ID
+               ,UPD_DT
+               )
+        VALUES(
+	        		 #{gt}
+	               , #{pc_list_nm}
+	               , #{carrier_nm}
+	               , #{db_name} 
+         	   	   , #{country}
+         	   	   , #{dsbd_yn}
+	               , #{crt_id}
+	               , now()
+	               , #{crt_id}
+	               , now() 
+	              )
+    </insert>
+
+    <!-- Gt 정보를 삭제 한다 -->
+    <delete id="deleteGt" parameterType="GtInfo">
+        DELETE FROM conf_gt_mst WHERE GT = #{gt}     
+    </delete>
+
+</mapper>
+

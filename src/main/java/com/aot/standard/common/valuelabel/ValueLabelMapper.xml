@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//ibatis.apache.org//DTD Mapper 3.0//EN" "http://ibatis.apache.org/dtd/ibatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.standard.common.valuelabel">
+    <select id="getValueLabelItemsToList" resultType="ValueLabelVO" parameterType="String">
+        SELECT MS2.CODE AS value,
+        IFNULL(MS2.CODENM_K, MS2.CODENM) AS label
+        FROM MGMT_SYSCOD2T MS2
+        <where>
+            AND MS2.GRCODE = #{grcode, jdbcType=VARCHAR}
+        </where>
+        ORDER BY MS2.SORTSEQ ASC
+    </select>
+
+    <select id="getLabelByValue" resultType="String" parameterType="Map">
+        SELECT IFNULL(MS2.CODENM_K, MS2.CODENM) AS label
+        FROM MGMT_SYSCOD2T MS2
+        <where>
+            AND MS2.GRCODE = #{grcode, jdbcType=VARCHAR}
+            AND MS2.CODE = #{code, jdbcType=VARCHAR}
+        </where>
+        ORDER BY MS2.SORTSEQ ASC
+    </select>
+</mapper>

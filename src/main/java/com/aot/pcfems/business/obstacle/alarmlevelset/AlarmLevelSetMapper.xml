@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.alarmlevelset">
+
+
+    <!-- 알람 등급 목록 조회 -->
+    <select id="getCommAlarmMstCnt" parameterType="AlarmLevelSet" resultType="int">
+        SELECT COUNT(*)
+        FROM comm_alarm_mst
+        WHERE 1=1
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_code )">
+            AND ALM_CODE LIKE CONCAT('%', #{alm_code, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_level )">
+            AND ALM_LEVEL LIKE CONCAT('%', #{alm_level, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_level_nm )">
+            AND ALM_LEVEL_NM LIKE CONCAT('%', #{alm_level_nm, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( snmp_name )">
+            AND SNMP_NAME LIKE CONCAT('%', #{snmp_name, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_desc )">
+            AND ALM_DESC LIKE CONCAT('%', #{alm_desc, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_category )">
+            AND ALM_CATEGORY LIKE CONCAT('%', #{alm_category, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_recovery )">
+            AND ALM_RECOVERY LIKE CONCAT('%', #{alm_recovery, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_clear_code )">
+            AND ALM_CLEAR_CODE LIKE CONCAT('%', #{alm_clear_code, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( sound_yn )">
+            AND SOUND_YN LIKE CONCAT('%', #{sound_yn, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( use_yn )">
+            AND USE_YN LIKE CONCAT('%', #{use_yn, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( crt_id )">
+            AND CRT_ID LIKE CONCAT('%', #{crt_id, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( upd_id )">
+            AND UPD_ID LIKE CONCAT('%', #{upd_id, jdbcType=VARCHAR}, '%')
+        </if>
+    </select>
+
+    <select id="getCommAlarmMst" parameterType="AlarmLevelSet" resultType="AlarmLevelSet">
+        SELECT A.ALM_CODE
+        , A.ALM_LEVEL
+        , FNC_GET_GRCODE_NAME_EX('ALM_LEVEL',A.ALM_LEVEL,#{user_lang}) AS ALM_LEVEL_NM
+        , A.SNMP_NAME
+        , A.ALM_DESC
+        , A.OPER_COMMENTS
+        , A.ALM_CATEGORY
+        , A.ALM_CLEAR_CODE
+        , A.ALM_RECOVERY
+        , A.SOUND_YN
+        , FNC_GET_GRCODE_NAME_EX('W001',A.SOUND_YN,#{user_lang}) AS SOUND_YN_NM
+        , A.USE_YN
+        , FNC_GET_GRCODE_NAME_EX('W001',A.USE_YN,#{user_lang}) AS USE_YN_NM
+        , FNC_GET_USER_NAME(A.UPD_ID) AS UPD_ID_NM
+        , DATE_FORMAT(A.UPD_DT,'%Y-%m-%d %H:%i:%s') AS UPD_DT
+        FROM comm_alarm_mst A
+        WHERE 1=1
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_code )">
+            AND ALM_CODE LIKE CONCAT('%', #{alm_code, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_level )">
+            AND ALM_LEVEL LIKE CONCAT('%', #{alm_level, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_level_nm )">
+            AND ALM_LEVEL_NM LIKE CONCAT('%', #{alm_level_nm, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( snmp_name )">
+            AND SNMP_NAME LIKE CONCAT('%', #{snmp_name, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_desc )">
+            AND ALM_DESC LIKE CONCAT('%', #{alm_desc, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_category )">
+            AND ALM_CATEGORY LIKE CONCAT('%', #{alm_category, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_recovery )">
+            AND ALM_RECOVERY LIKE CONCAT('%', #{alm_recovery, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( alm_clear_code )">
+            AND ALM_CLEAR_CODE LIKE CONCAT('%', #{alm_clear_code, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( sound_yn )">
+            AND SOUND_YN LIKE CONCAT('%', #{sound_yn, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( use_yn )">
+            AND USE_YN LIKE CONCAT('%', #{use_yn, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( crt_id )">
+            AND CRT_ID LIKE CONCAT('%', #{crt_id, jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotEmpty( upd_id )">
+            AND UPD_ID LIKE CONCAT('%', #{upd_id, jdbcType=VARCHAR}, '%')
+        </if>
+        ORDER BY
+        ${jqSidx} ${jqSord}
+        LIMIT #{startPageIndex} , #{endPageIndex}
+    </select>
+
+
+    <select id="getCommAlarmMstOne" parameterType="AlarmLevelSet" resultType="AlarmLevelSet">
+		SELECT A.ALM_CODE
+				 , A.ALM_LEVEL				  
+		         , A.SNMP_NAME
+		         , A.ALM_DESC
+		         , A.OPER_COMMENTS
+		         , A.ALM_CATEGORY
+		         , A.ALM_CLEAR_CODE
+		         , A.ALM_RECOVERY
+		         , A.SOUND_YN		         
+		         , A.USE_YN		         
+		         , A.UPD_ID		         
+		         , DATE_FORMAT(A.UPD_DT,'%Y-%m-%d %H:%i:%s') AS UPD_DT
+		  FROM comm_alarm_mst A
+		  WHERE A.ALM_CODE = #{alm_code} 
+	</select>
+
+    <!-- 알람 등급 수정 -->
+    <update id="updateCommAlarmMst" parameterType="AlarmLevelSet">
+		UPDATE comm_alarm_mst 
+			 SET  
+			 	   ALM_LEVEL 			= #{alm_level}			 	 
+			 	 , ALM_DESC 			= #{alm_desc}
+			 	 , ALM_CATEGORY 	= #{alm_category}
+			 	 , ALM_RECOVERY 	= #{alm_recovery}
+			 	 , SOUND_YN 			= #{sound_yn}
+			 	 , USE_YN 				= #{use_yn}
+			 	 , UPD_ID 				= #{upd_id}
+			 	 , UPD_DT 				= NOW()
+ 		WHERE ALM_CODE 			= #{alm_code}
+	</update>
+
+
+</mapper>
+ 	

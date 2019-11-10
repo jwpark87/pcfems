@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.tdm">
+
+    <!-- Tdm 존재 체크 -->
+    <select id="getTdmExist" resultType="String" parameterType="TdmInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_tdm_mst
+                      WHERE SORTSEQ = #{sortseq}                      	
+                    	)
+	</select>
+
+    <!-- Tdm 설정정보 취득 -->
+    <select id="getTdmDetail" resultType="TdmInfo" parameterType="TdmInfo">
+         SELECT
+         			A.SORTSEQ, A.LOCALITY, A.GNOC_TIE_NM, A.TS, A.GNOC_TIE_DSX_DCSA_NO, A.STP_TIE, A.GNOC_TIE_NDCS
+         			, A.SHELF, A.SLOT, A.E1_PORT, A.TIME_SLOT, A.CH_NUMBER, A.MAPPING, A.CRC, A.USE_STATUS, A.LOC_BOUND
+         			, A.NA, A.APC, A.SLC, A.ERROR_CONN, A.COUNTRY_NM, A.CARRIER_NM, A.CLLI, A.BEARER, A.BEARER_TIME_SLOT, A.CABLE, A.REMARK1,A.STATUS
+            		,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+            		,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+            		,DSBD_YN
+         FROM conf_tdm_mst A
+         WHERE A.SORTSEQ = #{sortseq}
+    </select>
+
+    <!-- Tdm 설정정보를 갱신 한다 -->
+    <update id="updateTdm" parameterType="TdmInfo">
+     UPDATE conf_tdm_mst
+         SET         	  
+         	  LOCALITY								=#{locality}
+         	, GNOC_TIE_NM						=#{gnoc_tie_nm}
+         	, TS										=#{ts}
+         	, GNOC_TIE_DSX_DCSA_NO		=#{gnoc_tie_dsx_dcsa_no}
+         	, STP_TIE								=#{stp_tie}
+         	, GNOC_TIE_NDCS					=#{gnoc_tie_ndcs}
+         	, SHELF									=#{shelf}	
+         	, SLOT									=#{slot}	
+         	, E1_PORT								=#{e1_port}
+         	, TIME_SLOT							=#{time_slot}
+         	, CH_NUMBER							=#{ch_number}
+         	, MAPPING								=#{mapping}
+         	, CRC										=#{crc}
+         	, USE_STATUS							=#{use_status}	
+         	, LOC_BOUND							=#{loc_bound}
+         	, NA										=#{na}
+         	, APC										=#{apc}
+         	, SLC										=#{slc}
+         	, ERROR_CONN							=#{error_conn}	
+         	, COUNTRY_NM						=#{country_nm}
+         	, CARRIER_NM							=#{carrier_nm}
+         	, CLLI										=#{clli}
+         	, BEARER									=#{bearer}
+         	, BEARER_TIME_SLOT				=#{bearer_time_slot}
+         	, CABLE									=#{cable}
+         	, REMARK1								=#{remark1}
+         	, STATUS								=#{status}
+         	, DSBD_YN								=#{dsbd_yn}
+            , UPD_ID  								=#{upd_id}
+            , UPD_DT  								= now()
+        WHERE SORTSEQ 		= #{sortseq}            
+    </update>
+
+    <!-- Link 정보 리스트 갯수 취득 -->
+    <select id="getTdmInfoListCount" resultType="int" parameterType="TdmSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_tdm_mst A
+        WHERE 1=1
+        <if test='srch_sortseq != "null" and srch_sortseq != null and srch_sortseq != ""'>
+            AND A.SORTSEQ LIKE CONCAT('%', #{srch_sortseq}, '%')
+        </if>
+        <if test='locality != "null" and locality != null and locality != ""'>
+            AND A.LOCALITY = #{locality}
+        </if>
+        <if test='gnoc_tie_nm != "null" and gnoc_tie_nm != null and gnoc_tie_nm != ""'>
+            AND A.GNOC_TIE_NM LIKE CONCAT('%', #{gnoc_tie_nm}, '%')
+        </if>
+        <if test='ts != "null" and ts != null and ts != ""'>
+            AND A.TS LIKE CONCAT('%', #{ts}, '%')
+        </if>
+        <if test='gnoc_tie_dsx_dcsa_no != "null" and gnoc_tie_dsx_dcsa_no != null and gnoc_tie_dsx_dcsa_no != ""'>
+            AND A.GNOC_TIE_DSX_DCSA_NO LIKE CONCAT('%', #{gnoc_tie_dsx_dcsa_no}, '%')
+        </if>
+        <if test='stp_tie != "null" and stp_tie != null and stp_tie != ""'>
+            AND A.STP_TIE LIKE CONCAT('%', #{stp_tie}, '%')
+        </if>
+        <if test='gnoc_tie_ndcs != "null" and gnoc_tie_ndcs != null and gnoc_tie_ndcs != ""'>
+            AND A.GNOC_TIE_NDCS LIKE CONCAT('%', #{gnoc_tie_ndcs}, '%')
+        </if>
+        <if test=" shelf != null ">
+            AND A.SHELF LIKE CONCAT('%', #{shelf}, '%')
+        </if>
+        <if test=" slot != null ">
+            AND A.SLOT LIKE CONCAT('%', #{slot}, '%')
+        </if>
+        <if test=" e1_port != null ">
+            AND A.E1_PORT LIKE CONCAT('%', #{e1_port}, '%')
+        </if>
+        <if test='time_slot != "null" and time_slot != null and time_slot != ""'>
+            AND A.TIME_SLOT LIKE CONCAT('%', #{time_slot}, '%')
+        </if>
+        <if test=" ch_number != null ">
+            AND A.CH_NUMBER LIKE CONCAT('%', #{ch_number}, '%')
+        </if>
+        <if test='mapping != "null" and mapping != null and mapping != ""'>
+            AND A.MAPPING LIKE CONCAT('%', #{mapping}, '%')
+        </if>
+        <if test='crc != "null" and crc != null and crc != ""'>
+            AND A.CRC LIKE CONCAT('%', #{crc}, '%')
+        </if>
+        <if test='use_status != "null" and use_status != null and use_status != ""'>
+            AND A.USE_STATUS LIKE CONCAT('%', #{use_status}, '%')
+        </if>
+        <if test='loc_bound != "null" and loc_bound != null and loc_bound != ""'>
+            AND A.LOC_BOUND LIKE CONCAT('%', #{loc_bound}, '%')
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test='apc != "null" and apc != null and apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{apc}, '%')
+        </if>
+        <if test=" slc != null ">
+            AND A.SLC LIKE CONCAT('%', #{slc}, '%')
+        </if>
+        <if test='error_conn != "null" and error_conn != null and error_conn != ""'>
+            AND A.ERROR_CONN LIKE CONCAT('%', #{error_conn}, '%')
+        </if>
+        <if test='country_nm != "null" and country_nm != null and country_nm != ""'>
+            AND A.COUNTRY_NM LIKE CONCAT('%', #{country_nm}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='bearer != "null" and bearer != null and bearer != ""'>
+            AND A.BEARER LIKE CONCAT('%', #{bearer}, '%')
+        </if>
+        <if test='bearer_time_slot != "null" and bearer_time_slot != null and bearer_time_slot != ""'>
+            AND A.BEARER_TIME_SLOT LIKE CONCAT('%', #{bearer_time_slot}, '%')
+        </if>
+        <if test='cable != "null" and cable != null and cable != ""'>
+            AND A.CABLE LIKE CONCAT('%', #{cable}, '%')
+        </if>
+        <if test='remark1 != "null" and remark1 != null and remark1 != ""'>
+            AND A.REMARK1 LIKE CONCAT('%', #{remark1}, '%')
+        </if>
+        <if test=' status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+    </select>
+
+
+    <!-- Link 정보 리스트  취득 -->
+    <select id="getTdmInfoList" resultType="TdmInfo" parameterType="TdmSearchInfo">
+        SELECT A.SORTSEQ
+        , A.LOCALITY
+        , FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY_NM
+        , A.GNOC_TIE_NM, A.TS, A.GNOC_TIE_DSX_DCSA_NO, A.STP_TIE, A.GNOC_TIE_NDCS, A.SHELF, A.SLOT, A.E1_PORT, A.TIME_SLOT
+        , A.CH_NUMBER, A.MAPPING, A.CRC, A.USE_STATUS, A.LOC_BOUND, A.NA, A.APC, A.SLC, A.ERROR_CONN, A.COUNTRY_NM, A.CARRIER_NM
+        , A.CLLI, A.BEARER, A.BEARER_TIME_SLOT, A.CABLE, A.REMARK1
+        , A.STATUS
+        , FNC_GET_GRCODE_NAME_EX('LINK_STATUS',A.STATUS,#{user_lang}) AS STATUS_NM
+        , A.DSBD_YN
+        , FNC_GET_GRCODE_NAME_EX('W001',A.DSBD_YN,#{user_lang}) AS DSBD_YN_NM
+        , (SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        , DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        conf_tdm_mst A
+        WHERE 1=1
+        <if test='srch_sortseq != "null" and srch_sortseq != null and srch_sortseq != ""'>
+            AND A.SORTSEQ LIKE CONCAT('%', #{srch_sortseq}, '%')
+        </if>
+        <if test='locality != "null" and locality != null and locality != ""'>
+            AND A.LOCALITY = #{locality}
+        </if>
+        <if test='gnoc_tie_nm != "null" and gnoc_tie_nm != null and gnoc_tie_nm != ""'>
+            AND A.GNOC_TIE_NM LIKE CONCAT('%', #{gnoc_tie_nm}, '%')
+        </if>
+        <if test='ts != "null" and ts != null and ts != ""'>
+            AND A.TS LIKE CONCAT('%', #{ts}, '%')
+        </if>
+        <if test='gnoc_tie_dsx_dcsa_no != "null" and gnoc_tie_dsx_dcsa_no != null and gnoc_tie_dsx_dcsa_no != ""'>
+            AND A.GNOC_TIE_DSX_DCSA_NO LIKE CONCAT('%', #{gnoc_tie_dsx_dcsa_no}, '%')
+        </if>
+        <if test='stp_tie != "null" and stp_tie != null and stp_tie != ""'>
+            AND A.STP_TIE LIKE CONCAT('%', #{stp_tie}, '%')
+        </if>
+        <if test='gnoc_tie_ndcs != "null" and gnoc_tie_ndcs != null and gnoc_tie_ndcs != ""'>
+            AND A.GNOC_TIE_NDCS LIKE CONCAT('%', #{gnoc_tie_ndcs}, '%')
+        </if>
+        <if test=" shelf != null ">
+            AND A.SHELF LIKE CONCAT('%', #{shelf}, '%')
+        </if>
+        <if test=" slot != null ">
+            AND A.SLOT LIKE CONCAT('%', #{slot}, '%')
+        </if>
+        <if test=" e1_port != null ">
+            AND A.E1_PORT LIKE CONCAT('%', #{e1_port}, '%')
+        </if>
+        <if test='time_slot != "null" and time_slot != null and time_slot != ""'>
+            AND A.TIME_SLOT LIKE CONCAT('%', #{time_slot}, '%')
+        </if>
+        <if test=" ch_number != null ">
+            AND A.CH_NUMBER LIKE CONCAT('%', #{ch_number}, '%')
+        </if>
+        <if test='mapping != "null" and mapping != null and mapping != ""'>
+            AND A.MAPPING LIKE CONCAT('%', #{mapping}, '%')
+        </if>
+        <if test='crc != "null" and crc != null and crc != ""'>
+            AND A.CRC LIKE CONCAT('%', #{crc}, '%')
+        </if>
+        <if test='use_status != "null" and use_status != null and use_status != ""'>
+            AND A.USE_STATUS LIKE CONCAT('%', #{use_status}, '%')
+        </if>
+        <if test='loc_bound != "null" and loc_bound != null and loc_bound != ""'>
+            AND A.LOC_BOUND LIKE CONCAT('%', #{loc_bound}, '%')
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test='apc != "null" and apc != null and apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{apc}, '%')
+        </if>
+        <if test=" slc != null ">
+            AND A.SLC LIKE CONCAT('%', #{slc}, '%')
+        </if>
+        <if test='error_conn != "null" and error_conn != null and error_conn != ""'>
+            AND A.ERROR_CONN LIKE CONCAT('%', #{error_conn}, '%')
+        </if>
+        <if test='country_nm != "null" and country_nm != null and country_nm != ""'>
+            AND A.COUNTRY_NM LIKE CONCAT('%', #{country_nm}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='bearer != "null" and bearer != null and bearer != ""'>
+            AND A.BEARER LIKE CONCAT('%', #{bearer}, '%')
+        </if>
+        <if test='bearer_time_slot != "null" and bearer_time_slot != null and bearer_time_slot != ""'>
+            AND A.BEARER_TIME_SLOT LIKE CONCAT('%', #{bearer_time_slot}, '%')
+        </if>
+        <if test='cable != "null" and cable != null and cable != ""'>
+            AND A.CABLE LIKE CONCAT('%', #{cable}, '%')
+        </if>
+        <if test='remark1 != "null" and remark1 != null and remark1 != ""'>
+            AND A.REMARK1 LIKE CONCAT('%', #{remark1}, '%')
+        </if>
+        <if test=' status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertTdm" parameterType="TdmInfo">
+        INSERT INTO conf_tdm_mst (
+				SORTSEQ													
+				,LOCALITY
+				,GNOC_TIE_NM
+				,TS
+				,GNOC_TIE_DSX_DCSA_NO
+				,STP_TIE
+				,GNOC_TIE_NDCS
+				,SHELF
+				,SLOT
+				,E1_PORT
+				,TIME_SLOT
+				,CH_NUMBER
+				,MAPPING
+				,CRC
+				,USE_STATUS
+				,LOC_BOUND
+				,NA
+				,APC
+				,SLC
+				,ERROR_CONN
+				,COUNTRY_NM
+				,CARRIER_NM
+				,CLLI
+				,BEARER
+				,BEARER_TIME_SLOT
+				,CABLE
+				,REMARK1
+				,STATUS
+				,DSBD_YN
+               	,CRT_ID
+               	,CRT_DT
+               	,UPD_ID
+               	,UPD_DT
+               )
+        VALUES(
+           		#{sortseq}													
+				,#{locality}
+				,#{gnoc_tie_nm}
+				,#{ts}
+				,#{gnoc_tie_dsx_dcsa_no}
+				,#{stp_tie}
+				,#{gnoc_tie_ndcs}
+				,#{shelf}
+				,#{slot}
+				,#{e1_port}
+				,#{time_slot}
+				,#{ch_number}
+				,#{mapping}
+				,#{crc}
+				,#{use_status}
+				,#{loc_bound}
+				,#{na}
+				,#{apc}
+				,#{slc}
+				,#{error_conn}
+				,#{country_nm}
+				,#{carrier_nm}
+				,#{clli}
+				,#{bearer}
+				,#{bearer_time_slot}
+				,#{cable}
+				,#{remark1}
+				,#{status}
+				,#{dsbd_yn}
+	           	,#{crt_id}
+	           	,now()
+	           	,#{crt_id}
+	           	,now() 
+	              )
+    </insert>
+
+    <!-- Tdm 정보를 삭제 한다 -->
+    <delete id="deleteTdm" parameterType="TdmInfo">
+        DELETE FROM conf_tdm_mst WHERE SORTSEQ = #{sortseq}
+    </delete>
+
+</mapper>
+

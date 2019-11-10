@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.dashboard.ObstacleDashboardDAO">
+    <select id="getEmsmHwConf" resultType="TableEmsmHwConfVO">
+		SELECT * FROM emsm_hw_conf EHC WHERE EHC.use_yn = 'Y' ORDER BY EHC.sortseq
+	</select>
+
+    <select id="getEmsmVmStatusBySvrId" resultType="TableEmsmVmStatusVO" parameterType="String">
+		SELECT * FROM emsm_vm_status EVS WHERE EVS.use_yn = 'Y' AND EVS.svr_id = #{svr_id, jdbcType=VARCHAR} ORDER BY EVS.sortseq
+	</select>
+
+    <select id="getEmsmVmStatusBySvrIdAndHwName" resultType="TableEmsmVmStatusVO" parameterType="Map">
+		SELECT * FROM emsm_vm_status EVS WHERE EVS.use_yn = 'Y' AND EVS.svr_id = #{svr_id, jdbcType=VARCHAR} AND EVS.hw_name = #{hw_name, jdbcType=VARCHAR} ORDER BY EVS.sortseq
+	</select>
+
+    <select id="getResTypeList" resultType="String" parameterType="String">
+select
+	erg.res_type
+from
+	emsm_realtime_graph erg
+join emsm_vm_status evs on
+	evs.node_group = erg.rtgrp_node
+where
+	erg.svr_id = #{svr_id, jdbcType=VARCHAR}
+	and evs.use_yn = 'Y'
+group by
+	erg.res_type
+order by
+	erg.res_type
+	</select>
+
+    <select id="getRtgrpNodeList" resultType="ObstacleDashboardVO" parameterType="String">
+select
+	erg.res_type,
+	erg.rtgrp_node
+from
+	emsm_realtime_graph erg
+where
+	erg.svr_id = #{svr_id, jdbcType=VARCHAR}
+	and erg.res_type not in ('CPU', 'MEM')
+	AND EXISTS (SELECT 1 FROM emsm_vm_status evs WHERE evs.svr_id = erg.svr_id AND evs.node_group = erg.rtgrp_node AND evs.use_yn = 'Y')
+order by
+	erg.res_type,
+	erg.sortseq
+	</select>
+
+    <select id="getEmsmRealtimeGraphByResType" resultType="ObstacleDashboardVO" parameterType="Map">
+        SELECT erg.res_type, rtgrp_node, erg.graph_value
+        FROM emsm_realtime_graph erg
+        <where>
+            AND erg.svr_id=#{svr_id, jdbcType=VARCHAR}
+<!--            <if test='@org.apache.commons.lang3.StringUtils@isNotEmpty( res_type )'>-->
+<!--                AND erg.res_type=#{res_type, jdbcType=VARCHAR}-->
+<!--            </if>-->
+            AND EXISTS (SELECT 1 FROM emsm_vm_status evs WHERE evs.svr_id = erg.svr_id AND evs.node_group = erg.rtgrp_node AND evs.use_yn = 'Y')
+            and erg.res_type not in ('CPU', 'MEM')
+        </where>
+        ORDER BY erg.res_type, erg.sortseq, erg.rtgrp_node
+    </select>
+
+    <select id="getResTypeNGraphValueByRtgrpNode" resultType="Map" parameterType="Map">
+select
+        ERG.res_type,
+        ERG.graph_value
+from
+        emsm_realtime_graph ERG
+join emsm_vm_status evs on
+        evs.node_name = ERG.rtgrp_node
+where
+        ERG.rtgrp_node = #{node_name, jdbcType=VARCHAR}
+        and ERG.res_type in ('CPU', 'MEM')
+        and evs.use_yn = 'Y'
+union all select
+        ERG.res_type,
+        ERG.graph_value
+from
+        emsm_realtime_graph ERG
+join emsm_vm_status evs on
+        evs.node_name = ERG.rtgrp_node
+where
+        ERG.rtgrp_node = #{node_name, jdbcType=VARCHAR}
+        and ERG.res_type like 'DISK%'
+        and evs.use_yn = 'Y'
+union all select
+        ERG.res_type,
+        ERG.graph_value
+from
+        emsm_realtime_graph ERG
+join emsm_vm_status evs on
+        evs.node_group = ERG.rtgrp_node
+where
+        evs.node_name = #{node_name, jdbcType=VARCHAR}
+        and ERG.res_type = 'TOT'
+        and evs.use_yn = 'Y'
+	</select>
+</mapper>
+

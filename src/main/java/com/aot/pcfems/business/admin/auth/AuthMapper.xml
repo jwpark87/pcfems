@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.admin.auth">
+
+    <!-- 권한레벨 정보  카운트 -->
+    <select id="getAuthLevelCount" resultType="int">
+        SELECT COUNT(*)
+        FROM MGMT_AUTH A
+        WHERE 1=1
+        AND A.AUTH_CODE <![CDATA[>=]]> (SELECT V.LEVELCOD FROM VW_MGMT_SYSUSRINFO V WHERE V.USER_ID = #{user_id} AND V.GROUP_ID = #{groupId})
+        <if test='auth_code != ""'>
+            AND UPPER(A.AUTH_CODE) LIKE CONCAT('%', UPPER(#{auth_code}), '%')
+        </if>
+        <if test='auth_nm_kor != ""'>
+            AND UPPER(A.AUTH_NM_KOR) LIKE CONCAT('%', UPPER(#{auth_nm_kor}), '%')
+        </if>
+        <if test='auth_nm_eng != ""'>
+            AND UPPER(A.AUTH_NM_ENG) LIKE CONCAT('%', UPPER(#{auth_nm_eng}), '%')
+        </if>
+        <if test='auth_nm_jpn != ""'>
+            AND UPPER(A.AUTH_NM_JPN) LIKE CONCAT('%', UPPER(#{auth_nm_jpn}), '%')
+        </if>
+        <if test='use_yn != ""'>
+            AND A.USE_YN = #{use_yn}
+        </if>
+    </select>
+
+    <!-- 권한레벨 정보  취득 -->
+    <select id="getAuthLevelList" resultType="AuthVO">
+        SELECT
+        A.AUTH_CODE
+        , A.AUTH_NM_KOR
+        , A.AUTH_NM_ENG
+        , A.AUTH_NM_JPN
+        , A.USE_YN
+        , A.UPD_ID
+        , F_COMM_USER_NM(A.UPD_ID) AS UPD_NM
+        , DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') AS UPD_DT
+        FROM MGMT_AUTH A
+        WHERE 1=1
+        AND A.AUTH_CODE <![CDATA[>=]]> (SELECT V.LEVELCOD FROM VW_MGMT_SYSUSRINFO V WHERE V.USER_ID = #{user_id} AND V.GROUP_ID = #{groupId})
+        <if test='auth_code != ""'>
+            AND UPPER(A.AUTH_CODE) LIKE CONCAT('%', UPPER(#{auth_code}), '%')
+        </if>
+        <if test='auth_nm_kor != ""'>
+            AND UPPER(A.AUTH_NM_KOR) LIKE CONCAT('%', UPPER(#{auth_nm_kor}), '%')
+        </if>
+        <if test='auth_nm_eng != ""'>
+            AND UPPER(A.AUTH_NM_ENG) LIKE CONCAT('%', UPPER(#{auth_nm_eng}), '%')
+        </if>
+        <if test='auth_nm_jpn != ""'>
+            AND UPPER(A.AUTH_NM_JPN) LIKE CONCAT('%', UPPER(#{auth_nm_jpn}), '%')
+        </if>
+        <if test='use_yn != ""'>
+            AND A.USE_YN = #{use_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        LIMIT #{startPageIndex} ,#{endPageIndex}
+    </select>
+
+    <!-- 권한레벨 단일 정보  취득 -->
+    <select id="getAuthLevelInfo" parameterType="AuthVO" resultType="AuthVO">
+		    SELECT  
+		           A.AUTH_CODE	              
+	              , A.AUTH_NM_KOR	              
+	              , A.AUTH_NM_ENG
+	              ,	A.AUTH_NM_JPN
+	              , A.USE_YN
+	        FROM MGMT_AUTH A
+	          WHERE 1=1	          
+	          AND A.AUTH_CODE = #{auth_code}
+         	
+	</select>
+
+    <!-- 기등록여부 체크 -->
+    <select id="getAuthLevelExist" resultType="int">
+	    	SELECT COUNT(*) FROM MGMT_AUTH
+             WHERE AUTH_CODE         = #{auth_code}
+	</select>
+
+    <!-- 권한레벨 정보  등록-->
+    <insert id="insertAuthLevel" parameterType="AuthVO">
+        <selectKey keyProperty="sort_no" resultType="int" order="BEFORE">
+            SELECT IFNULL(MAX(SORT_NO), 0) +1 AS NO
+            FROM MGMT_AUTH
+        </selectKey>
+        INSERT INTO MGMT_AUTH
+        VALUES (
+        #{auth_code}
+        ,#{auth_nm_kor}
+        ,#{auth_nm_eng}
+        ,#{auth_nm_jpn}
+        ,#{sort_no}
+        ,#{use_yn}
+        ,#{user_id}
+        ,#{user_id}
+        ,NOW()
+        ,NOW()
+        )
+    </insert>
+
+    <!-- 권한레벨 정보  수정-->
+    <update id="updateAuthLevel" parameterType="AuthVO">
+	     UPDATE MGMT_AUTH
+    		SET AUTH_NM_KOR 	= #{auth_nm_kor}
+    			 ,AUTH_NM_ENG 	= #{auth_nm_eng}
+    			 ,AUTH_NM_JPN 	= #{auth_nm_jpn}
+    			 ,USE_YN 			= #{use_yn}
+    			 ,UPD_DT 			= NOW()
+    			 ,UPD_ID 			= #{user_id}
+    		WHERE  AUTH_CODE = #{auth_code}
+	</update>
+
+    <!-- 권한레벨 정보  삭제-->
+    <delete id="deleteAuthLevel" parameterType="AuthVO">
+	    DELETE FROM MGMT_AUTH 
+	     WHERE AUTH_CODE = #{auth_code}
+	</delete>
+</mapper>
+

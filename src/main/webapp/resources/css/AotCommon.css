@@ -1,0 +1,41 @@
+@CHARSET "UTF-8";
+
+body {
+    width: 99.9%;
+}
+
+.page-title {
+    margin: 12px 0 20px;
+}
+
+#main {
+    padding-bottom: 0;
+}
+
+.modal-open {
+    padding-right: 0 !important;
+}
+
+a.button-icon > label {
+    padding: 0 7px;
+}
+
+div.jarviswidget-color-blueDark div.jarviswidget-ctrls a.button-icon, div.jarviswidget-color-blueDark div.widget-toolbar {
+    border-left: 1px solid gray
+}
+
+div.jarviswidget-color-blueDark a.button-icon {
+    color: #fff;
+}
+
+div.DTFC_LeftBodyWrapper, div.DTFC_RightBodyWrapper {
+    background-color: #f3f3f3 !important;
+}
+
+.ui-jqgrid-bdiv, .dataTables_scrollBody {
+    min-height: 120px !important;
+}
+
+a.button-icon > label {
+    cursor: pointer;
+}

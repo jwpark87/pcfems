@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.obstacle.linkset">
+
+    <!-- Linkset 존재 체크 -->
+    <select id="getLinksetExist" resultType="String" parameterType="LinksetInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_linkset_mst
+                      WHERE LOCALITY = #{locality}
+                      	AND  APC  = #{apc}
+                    	)
+	</select>
+
+    <!-- Linkset 설정정보 취득 -->
+    <select id="getLinksetDetail" resultType="LinksetInfo" parameterType="LinksetInfo">
+         SELECT A.LOCALITY         	
+                    ,A.NA
+                    ,A.COUNTRY
+                    ,A.APC
+                    ,A.CARRIER_NM
+                    ,A.CLLI 
+             		,A.STATUS
+             		,A.DSBD_YN
+            		,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+            		,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+         FROM conf_linkset_mst A
+         WHERE A.LOCALITY = #{locality}
+             AND A.APC = #{apc}
+    </select>
+
+    <!-- Linkset 설정정보를 갱신 한다 -->
+    <update id="updateLinkset" parameterType="LinksetInfo">
+     UPDATE conf_linkset_mst
+         SET
+         	NA						= #{na},
+         	COUNTRY			= #{country}, 
+         	CARRIER_NM		= #{carrier_nm},
+         	CLLI					= #{clli},         	
+         	STATUS				= #{status},
+         	DSBD_YN			= #{dsbd_yn},
+            UPD_ID  				= #{upd_id},
+            UPD_DT  			= now()
+        WHERE LOCALITY 	= #{locality}
+            AND APC				= #{apc}
+    </update>
+
+    <!-- Link 정보 리스트 갯수 취득 -->
+    <select id="getLinksetInfoListCount" resultType="int" parameterType="LinksetSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_linkset_mst A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test='srch_apc != "null" and srch_apc != null and srch_apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{srch_apc}, '%')
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='status != "null" and status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+    </select>
+
+
+    <!-- Link 정보 리스트  취득 -->
+    <select id="getLinksetInfoList" resultType="LinksetInfo" parameterType="LinksetSearchInfo">
+        SELECT
+        A.LOCALITY
+        , FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY_NM
+        , A.NA
+        , A.COUNTRY
+        , A.APC
+        , A.CARRIER_NM
+        , A.CLLI
+        , A.STATUS
+        , FNC_GET_GRCODE_NAME_EX('LINK_STATUS',A.STATUS,#{user_lang}) AS STATUS_NM
+        , A.DSBD_YN
+        , FNC_GET_GRCODE_NAME_EX('W001',A.DSBD_YN,#{user_lang}) AS DSBD_YN_NM
+        , (SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        , DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        conf_linkset_mst A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='na != "null" and na != null and na != ""'>
+            AND A.NA LIKE CONCAT('%', #{na}, '%')
+        </if>
+        <if test='srch_apc != "null" and srch_apc != null and srch_apc != ""'>
+            AND A.APC LIKE CONCAT('%', #{srch_apc}, '%')
+        </if>
+        <if test='country != "null" and country != null and country != ""'>
+            AND A.COUNTRY LIKE CONCAT('%', #{country}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='clli != "null" and clli != null and clli != ""'>
+            AND A.CLLI LIKE CONCAT('%', #{clli}, '%')
+        </if>
+        <if test='status != "null" and status != null and status != ""'>
+            AND A.STATUS = #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertLinkset" parameterType="LinksetInfo">
+        INSERT INTO conf_linkset_mst (
+				LOCALITY         	
+        	    ,NA
+    	        ,COUNTRY
+	            ,APC
+              	,CARRIER_NM
+              	,CLLI 
+       			,STATUS
+       			,DSBD_YN
+               ,CRT_ID
+               ,CRT_DT
+               ,UPD_ID
+               ,UPD_DT
+               )
+        VALUES(
+           		#{locality}         	
+        	    ,#{na}
+    	        ,#{country}
+	            ,#{apc}
+              	,#{carrier_nm}
+              	,#{clli}
+       			,#{status}
+       			,#{dsbd_yn}
+	           ,#{crt_id}
+	           ,now()
+	           ,#{crt_id}
+	           ,now() 
+	              )
+    </insert>
+
+    <!-- Linkset 정보를 삭제 한다 -->
+    <delete id="deleteLinkset" parameterType="LinksetInfo">
+        DELETE FROM conf_linkset_mst WHERE LOCALITY = #{locality} AND APC = #{apc}
+    </delete>
+
+</mapper>
+

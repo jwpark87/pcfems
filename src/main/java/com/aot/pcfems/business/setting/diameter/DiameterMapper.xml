@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.setting.diameter">
+
+    <!-- Diameter 존재 체크 -->
+    <select id="getDiameterExist" resultType="String" parameterType="DiameterInfo">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM conf_diameter_peer
+                      WHERE HOST = #{host} AND LOCALITY = #{locality})
+	</select>
+
+    <!-- Diameter 설정정보 취득 -->
+    <select id="getDiameterDetail" resultType="DiameterInfo" parameterType="DiameterInfo">
+         SELECT
+            	 LOCALITY
+				,COUNTRY_NM
+				,CARRIER_NM
+				,LOCAL
+				,REALM
+				,HOST
+				,REMOTE_PEER_MODE
+				,LOCAL_SLOT
+				,LOCAL_PRIMARY_IP
+				,LOCAL_SECONDARY_IP
+				,LOCAL_PORT
+				,REMOTE_PRIMARY_IP
+				,REMOTE_SECONDARY_IP
+				,REMOTE_PORT
+				,ACCESS_CTRL_LIST
+				,INTERFACE 			AS STRINTERFACE
+				,SCTP_TW_TIMER
+				,SCTP_HB_INTERVAL
+				,SCTP_ASSOC_MAX_RETRANS
+				,SCTP_RTO_INIT
+				,SCTP_RTO_MIN
+				,SCTP_RTO_MAX
+				,SCTP_PATH_MAX_RETRANS
+				,SCTP_MAX_INIT_RETRANS
+				,SCTP_MAX_SEG
+				,SCTP_SACK_TIMEOUT
+				,CONTACT_NAME
+				,CONTACT_EMAIL
+				,CONTACT_NOC
+				,CONTACT_FIX_PHONE
+				,CONTACT_MOBILE_PHONE
+				,VENDOR_NAME
+				,STATUS
+				,DATE_FORMAT(OPEN_DT, '%Y-%m-%d') OPEN_DT
+				,DSBD_YN
+         FROM conf_diameter_peer
+         WHERE HOST 			= #{host}
+             AND LOCALITY 	= #{locality}
+    </select>
+
+    <!-- Diameter 설정정보를 갱신 한다 -->
+    <update id="updateDiameter" parameterType="DiameterInfo">
+        UPDATE conf_diameter_peer
+        SET
+        COUNTRY_NM = #{country_nm}
+        ,CARRIER_NM = #{carrier_nm}
+        ,LOCAL = #{local}
+        ,REALM = #{realm}
+        ,HOST = #{host}
+        ,REMOTE_PEER_MODE = #{remote_peer_mode}
+        ,LOCAL_SLOT = #{local_slot}
+        ,LOCAL_PRIMARY_IP = #{local_primary_ip}
+        ,LOCAL_SECONDARY_IP = #{local_secondary_ip}
+        ,LOCAL_PORT = #{local_port}
+        ,REMOTE_PRIMARY_IP = #{remote_primary_ip}
+        ,REMOTE_SECONDARY_IP = #{remote_secondary_ip}
+        ,REMOTE_PORT = #{remote_port}
+        ,ACCESS_CTRL_LIST = #{access_ctrl_list}
+        ,INTERFACE = #{strInterface}
+        ,SCTP_TW_TIMER = #{sctp_tw_timer}
+        ,SCTP_HB_INTERVAL = #{sctp_hb_interval}
+        ,SCTP_ASSOC_MAX_RETRANS = #{sctp_assoc_max_retrans}
+        ,SCTP_RTO_INIT = #{sctp_rto_init}
+        ,SCTP_RTO_MIN = #{sctp_rto_min}
+        ,SCTP_RTO_MAX = #{sctp_rto_max}
+        ,SCTP_PATH_MAX_RETRANS = #{sctp_path_max_retrans}
+        ,SCTP_MAX_INIT_RETRANS = #{sctp_max_init_retrans}
+        ,SCTP_MAX_SEG = #{sctp_max_seg}
+        ,SCTP_SACK_TIMEOUT = #{sctp_sack_timeout}
+        ,CONTACT_NAME = #{contact_name}
+        ,CONTACT_EMAIL = #{contact_email}
+        ,CONTACT_NOC = #{contact_noc}
+        ,CONTACT_FIX_PHONE = #{contact_fix_phone}
+        ,CONTACT_MOBILE_PHONE = #{contact_mobile_phone}
+        ,VENDOR_NAME = #{vendor_name}
+        <if test='open_dt != null and open_dt != ""'>
+            ,OPEN_DT = #{open_dt}
+        </if>
+        <if test="open_dt == ''">
+            ,OPEN_DT = null
+        </if>
+        ,STATUS =#{status}
+        ,DSBD_YN = #{dsbd_yn}
+        ,UPD_ID = #{upd_id}
+        ,UPD_DT = now()
+        WHERE HOST = #{host}
+        AND LOCALITY = #{locality}
+    </update>
+
+    <!-- Diameter 정보 리스트 갯수 취득 -->
+    <select id="getDiameterInfoListCount" resultType="int" parameterType="DiameterSearchInfo">
+        SELECT COUNT(1)
+        FROM conf_diameter_peer A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='country_nm != "null" and country_nm != null and country_nm != ""'>
+            AND A.COUNTRY_NM LIKE CONCAT('%', #{country_nm}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='local != "null" and local != null and local != ""'>
+            AND A.LOCAL LIKE CONCAT('%', #{local}, '%')
+        </if>
+        <if test='realm != "null" and realm != null and realm != ""'>
+            AND A.REALM LIKE CONCAT('%', #{realm}, '%')
+        </if>
+        <if test='srch_host != "null" and srch_host != null and srch_host != ""'>
+            AND A.HOST LIKE CONCAT('%', #{srch_host}, '%')
+        </if>
+        <if test='remote_peer_mode != "null" and remote_peer_mode != null and remote_peer_mode != ""'>
+            AND A.REMOTE_PEER_MODE LIKE CONCAT('%', #{remote_peer_mode}, '%')
+        </if>
+        <if test='local_slot != "null" and local_slot != null and local_slot != ""'>
+            AND A.LOCAL_SLOT LIKE CONCAT('%', #{local_slot}, '%')
+        </if>
+        <if test='local_primary_ip != "null" and local_primary_ip != null and local_primary_ip != ""'>
+            AND A.LOCAL_PRIMARY_IP LIKE CONCAT('%', #{local_primary_ip}, '%')
+        </if>
+        <if test='local_secondary_ip != "null" and local_secondary_ip != null and local_secondary_ip != ""'>
+            AND A.LOCAL_SECONDARY_IP LIKE CONCAT('%', #{local_secondary_ip}, '%')
+        </if>
+        <if test=" local_port != null ">
+            AND A.LOCAL_PORT LIKE CONCAT('%', #{local_port}, '%')
+        </if>
+        <if test='remote_primary_ip != "null" and remote_primary_ip != null and remote_primary_ip != ""'>
+            AND A.REMOTE_PRIMARY_IP LIKE CONCAT('%', #{remote_primary_ip}, '%')
+        </if>
+        <if test='remote_secondary_ip != "null" and remote_secondary_ip != null and remote_secondary_ip != ""'>
+            AND A.REMOTE_SECONDARY_IP LIKE CONCAT('%', #{remote_secondary_ip}, '%')
+        </if>
+        <if test=" remote_port != null ">
+            AND A.REMOTE_PORT LIKE CONCAT('%', #{remote_port}, '%')
+        </if>
+        <if test='access_ctrl_list != "null" and access_ctrl_list != null and access_ctrl_list != ""'>
+            AND A.ACCESS_CTRL_LIST LIKE CONCAT('%', #{access_ctrl_list}, '%')
+        </if>
+        <if test='strInterface != "null" and strInterface != null and strInterface != ""'>
+            AND A.INTERFACE LIKE CONCAT('%', #{strInterface}, '%')
+        </if>
+        <if test=" sctp_tw_timer != null ">
+            AND A.SCTP_TW_TIMER LIKE CONCAT('%', #{sctp_tw_timer}, '%')
+        </if>
+        <if test=" sctp_hb_interval != null ">
+            AND A.SCTP_HB_INTERVAL LIKE CONCAT('%', #{sctp_hb_interval}, '%')
+        </if>
+        <if test=" sctp_assoc_max_retrans != null ">
+            AND A.SCTP_ASSOC_MAX_RETRANS LIKE CONCAT('%', #{sctp_assoc_max_retrans}, '%')
+        </if>
+        <if test=" sctp_rto_init != null ">
+            AND A.SCTP_RTO_INIT LIKE CONCAT('%', #{sctp_rto_init}, '%')
+        </if>
+        <if test=" sctp_rto_min != null ">
+            AND A.SCTP_RTO_MIN LIKE CONCAT('%', #{sctp_rto_min}, '%')
+        </if>
+        <if test=" sctp_rto_max != null ">
+            AND A.SCTP_RTO_MAX LIKE CONCAT('%', #{sctp_rto_max}, '%')
+        </if>
+        <if test=" sctp_path_max_retrans != null ">
+            AND A.SCTP_PATH_MAX_RETRANS LIKE CONCAT('%', #{sctp_path_max_retrans}, '%')
+        </if>
+        <if test=" sctp_max_init_retrans != null ">
+            AND A.SCTP_MAX_INIT_RETRANS LIKE CONCAT('%', #{sctp_max_init_retrans}, '%')
+        </if>
+        <if test=" sctp_max_seg != null ">
+            AND A.SCTP_MAX_SEG LIKE CONCAT('%', #{sctp_max_seg}, '%')
+        </if>
+        <if test=" sctp_sack_timeout != null ">
+            AND A.SCTP_SACK_TIMEOUT LIKE CONCAT('%', #{sctp_sack_timeout}, '%')
+        </if>
+        <if test='contact_name != "null" and contact_name != null and contact_name != ""'>
+            AND A.CONTACT_NAME LIKE CONCAT('%', #{contact_name}, '%')
+        </if>
+        <if test='contact_email != "null" and contact_email != null and contact_email != ""'>
+            AND A.CONTACT_EMAIL LIKE CONCAT('%', #{contact_email}, '%')
+        </if>
+        <if test='contact_noc != "null" and contact_noc != null and contact_noc != ""'>
+            AND A.CONTACT_NOC LIKE CONCAT('%', #{contact_noc}, '%')
+        </if>
+        <if test='contact_fix_phone != "null" and contact_fix_phone != null and contact_fix_phone != ""'>
+            AND A.CONTACT_FIX_PHONE LIKE CONCAT('%', #{contact_fix_phone}, '%')
+        </if>
+        <if test='contact_mobile_phone != "null" and contact_mobile_phone != null and contact_mobile_phone != ""'>
+            AND A.CONTACT_MOBILE_PHONE LIKE CONCAT('%', #{contact_mobile_phone}, '%')
+        </if>
+        <if test='vendor_name != "null" and vendor_name != null and vendor_name != ""'>
+            AND A.VENDOR_NAME LIKE CONCAT('%', #{vendor_name}, '%')
+        </if>
+        <if test='status != "null" and status != null and status != ""'>
+            AND A.STATUS= #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+    </select>
+
+
+    <!-- Diameter 정보 리스트  취득 -->
+    <select id="getDiameterInfoList" resultType="DiameterInfo" parameterType="DiameterSearchInfo">
+        SELECT
+        A.LOCALITY
+        ,FNC_GET_GRCODE_NAME_EX('LOCALITY',A.LOCALITY,#{user_lang}) AS LOCALITY_NM
+        ,A.COUNTRY_NM
+        ,A.CARRIER_NM
+        ,A.LOCAL
+        ,A.REALM
+        ,A.HOST
+        ,A.REMOTE_PEER_MODE
+        ,A.LOCAL_SLOT
+        ,A.LOCAL_PRIMARY_IP
+        ,A.LOCAL_SECONDARY_IP
+        ,A.LOCAL_PORT
+        ,A.REMOTE_PRIMARY_IP
+        ,A.REMOTE_SECONDARY_IP
+        ,A.REMOTE_PORT
+        ,A.ACCESS_CTRL_LIST
+        ,A.INTERFACE AS STRINTERFACE
+        ,A.SCTP_TW_TIMER
+        ,A.SCTP_HB_INTERVAL
+        ,A.SCTP_ASSOC_MAX_RETRANS
+        ,A.SCTP_RTO_INIT
+        ,A.SCTP_RTO_MIN
+        ,A.SCTP_RTO_MAX
+        ,A.SCTP_PATH_MAX_RETRANS
+        ,A.SCTP_MAX_INIT_RETRANS
+        ,A.SCTP_MAX_SEG
+        ,A.SCTP_SACK_TIMEOUT
+        ,A.CONTACT_NAME
+        ,A.CONTACT_EMAIL
+        ,A.CONTACT_NOC
+        ,A.CONTACT_FIX_PHONE
+        ,A.CONTACT_MOBILE_PHONE
+        ,A.VENDOR_NAME
+        ,DATE_FORMAT(A.OPEN_DT, '%Y-%m-%d') OPEN_DT
+        ,A.STATUS
+        ,FNC_GET_GRCODE_NAME_EX('LINK_STATUS',A.STATUS,#{user_lang}) AS STATUS_NM
+        ,A.DSBD_YN
+        ,FNC_GET_GRCODE_NAME_EX('W001',A.DSBD_YN,#{user_lang}) AS DSBD_YN_NM
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        conf_diameter_peer A
+        WHERE 1=1
+        <if test='srch_locality != "null" and srch_locality != null and srch_locality != ""'>
+            AND A.LOCALITY = #{srch_locality}
+        </if>
+        <if test='country_nm != "null" and country_nm != null and country_nm != ""'>
+            AND A.COUNTRY_NM LIKE CONCAT('%', #{country_nm}, '%')
+        </if>
+        <if test='carrier_nm != "null" and carrier_nm != null and carrier_nm != ""'>
+            AND A.CARRIER_NM LIKE CONCAT('%', #{carrier_nm}, '%')
+        </if>
+        <if test='local != "null" and local != null and local != ""'>
+            AND A.LOCAL LIKE CONCAT('%', #{local}, '%')
+        </if>
+        <if test='realm != "null" and realm != null and realm != ""'>
+            AND A.REALM LIKE CONCAT('%', #{realm}, '%')
+        </if>
+        <if test='srch_host != "null" and srch_host != null and srch_host != ""'>
+            AND A.HOST LIKE CONCAT('%', #{srch_host}, '%')
+        </if>
+        <if test='remote_peer_mode != "null" and remote_peer_mode != null and remote_peer_mode != ""'>
+            AND A.REMOTE_PEER_MODE LIKE CONCAT('%', #{remote_peer_mode}, '%')
+        </if>
+        <if test='local_slot != "null" and local_slot != null and local_slot != ""'>
+            AND A.LOCAL_SLOT LIKE CONCAT('%', #{local_slot}, '%')
+        </if>
+        <if test='local_primary_ip != "null" and local_primary_ip != null and local_primary_ip != ""'>
+            AND A.LOCAL_PRIMARY_IP LIKE CONCAT('%', #{local_primary_ip}, '%')
+        </if>
+        <if test='local_secondary_ip != "null" and local_secondary_ip != null and local_secondary_ip != ""'>
+            AND A.LOCAL_SECONDARY_IP LIKE CONCAT('%', #{local_secondary_ip}, '%')
+        </if>
+        <if test=" local_port != null ">
+            AND A.LOCAL_PORT LIKE CONCAT('%', #{local_port}, '%')
+        </if>
+        <if test='remote_primary_ip != "null" and remote_primary_ip != null and remote_primary_ip != ""'>
+            AND A.REMOTE_PRIMARY_IP LIKE CONCAT('%', #{remote_primary_ip}, '%')
+        </if>
+        <if test='remote_secondary_ip != "null" and remote_secondary_ip != null and remote_secondary_ip != ""'>
+            AND A.REMOTE_SECONDARY_IP LIKE CONCAT('%', #{remote_secondary_ip}, '%')
+        </if>
+        <if test=" remote_port != null ">
+            AND A.REMOTE_PORT LIKE CONCAT('%', #{remote_port}, '%')
+        </if>
+        <if test='access_ctrl_list != "null" and access_ctrl_list != null and access_ctrl_list != ""'>
+            AND A.ACCESS_CTRL_LIST LIKE CONCAT('%', #{access_ctrl_list}, '%')
+        </if>
+        <if test='strInterface != "null" and strInterface != null and strInterface != ""'>
+            AND A.INTERFACE LIKE CONCAT('%', #{strInterface}, '%')
+        </if>
+        <if test=" sctp_tw_timer != null ">
+            AND A.SCTP_TW_TIMER LIKE CONCAT('%', #{sctp_tw_timer}, '%')
+        </if>
+        <if test=" sctp_hb_interval != null ">
+            AND A.SCTP_HB_INTERVAL LIKE CONCAT('%', #{sctp_hb_interval}, '%')
+        </if>
+        <if test=" sctp_assoc_max_retrans != null ">
+            AND A.SCTP_ASSOC_MAX_RETRANS LIKE CONCAT('%', #{sctp_assoc_max_retrans}, '%')
+        </if>
+        <if test=" sctp_rto_init != null ">
+            AND A.SCTP_RTO_INIT LIKE CONCAT('%', #{sctp_rto_init}, '%')
+        </if>
+        <if test=" sctp_rto_min != null ">
+            AND A.SCTP_RTO_MIN LIKE CONCAT('%', #{sctp_rto_min}, '%')
+        </if>
+        <if test=" sctp_rto_max != null ">
+            AND A.SCTP_RTO_MAX LIKE CONCAT('%', #{sctp_rto_max}, '%')
+        </if>
+        <if test=" sctp_path_max_retrans != null ">
+            AND A.SCTP_PATH_MAX_RETRANS LIKE CONCAT('%', #{sctp_path_max_retrans}, '%')
+        </if>
+        <if test=" sctp_max_init_retrans != null ">
+            AND A.SCTP_MAX_INIT_RETRANS LIKE CONCAT('%', #{sctp_max_init_retrans}, '%')
+        </if>
+        <if test=" sctp_max_seg != null ">
+            AND A.SCTP_MAX_SEG LIKE CONCAT('%', #{sctp_max_seg}, '%')
+        </if>
+        <if test=" sctp_sack_timeout != null ">
+            AND A.SCTP_SACK_TIMEOUT LIKE CONCAT('%', #{sctp_sack_timeout}, '%')
+        </if>
+        <if test='contact_name != "null" and contact_name != null and contact_name != ""'>
+            AND A.CONTACT_NAME LIKE CONCAT('%', #{contact_name}, '%')
+        </if>
+        <if test='contact_email != "null" and contact_email != null and contact_email != ""'>
+            AND A.CONTACT_EMAIL LIKE CONCAT('%', #{contact_email}, '%')
+        </if>
+        <if test='contact_noc != "null" and contact_noc != null and contact_noc != ""'>
+            AND A.CONTACT_NOC LIKE CONCAT('%', #{contact_noc}, '%')
+        </if>
+        <if test='contact_fix_phone != "null" and contact_fix_phone != null and contact_fix_phone != ""'>
+            AND A.CONTACT_FIX_PHONE LIKE CONCAT('%', #{contact_fix_phone}, '%')
+        </if>
+        <if test='contact_mobile_phone != "null" and contact_mobile_phone != null and contact_mobile_phone != ""'>
+            AND A.CONTACT_MOBILE_PHONE LIKE CONCAT('%', #{contact_mobile_phone}, '%')
+        </if>
+        <if test='vendor_name != "null" and vendor_name != null and vendor_name != ""'>
+            AND A.VENDOR_NAME LIKE CONCAT('%', #{vendor_name}, '%')
+        </if>
+        <if test='status != "null" and status != null and status != ""'>
+            AND A.STATUS= #{status}
+        </if>
+        <if test='dsbd_yn != "null" and dsbd_yn != null and dsbd_yn != ""'>
+            AND A.DSBD_YN = #{dsbd_yn}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="insertDiameter" parameterType="DiameterInfo">
+        INSERT INTO conf_diameter_peer (
+        LOCALITY
+        ,COUNTRY_NM
+        ,CARRIER_NM
+        ,LOCAL
+        ,REALM
+        ,HOST
+        ,REMOTE_PEER_MODE
+        ,LOCAL_SLOT
+        ,LOCAL_PRIMARY_IP
+        ,LOCAL_SECONDARY_IP
+        ,LOCAL_PORT
+        ,REMOTE_PRIMARY_IP
+        ,REMOTE_SECONDARY_IP
+        ,REMOTE_PORT
+        ,ACCESS_CTRL_LIST
+        ,INTERFACE
+        ,SCTP_TW_TIMER
+        ,SCTP_HB_INTERVAL
+        ,SCTP_ASSOC_MAX_RETRANS
+        ,SCTP_RTO_INIT
+        ,SCTP_RTO_MIN
+        ,SCTP_RTO_MAX
+        ,SCTP_PATH_MAX_RETRANS
+        ,SCTP_MAX_INIT_RETRANS
+        ,SCTP_MAX_SEG
+        ,SCTP_SACK_TIMEOUT
+        ,CONTACT_NAME
+        ,CONTACT_EMAIL
+        ,CONTACT_NOC
+        ,CONTACT_FIX_PHONE
+        ,CONTACT_MOBILE_PHONE
+        ,VENDOR_NAME
+        ,OPEN_DT
+        ,STATUS
+        ,DSBD_YN
+        ,CRT_ID
+        ,CRT_DT
+        ,UPD_ID
+        ,UPD_DT
+        )
+        VALUES(
+        #{locality}
+        ,#{country_nm}
+        ,#{carrier_nm}
+        ,#{local}
+        ,#{realm}
+        ,#{host}
+        ,#{remote_peer_mode}
+        ,#{local_slot}
+        ,#{local_primary_ip}
+        ,#{local_secondary_ip}
+        ,#{local_port}
+        ,#{remote_primary_ip}
+        ,#{remote_secondary_ip}
+        ,#{remote_port}
+        ,#{access_ctrl_list}
+        ,#{strInterface}
+        ,#{sctp_tw_timer}
+        ,#{sctp_hb_interval}
+        ,#{sctp_assoc_max_retrans}
+        ,#{sctp_rto_init}
+        ,#{sctp_rto_min}
+        ,#{sctp_rto_max}
+        ,#{sctp_path_max_retrans}
+        ,#{sctp_max_init_retrans}
+        ,#{sctp_max_seg}
+        ,#{sctp_sack_timeout}
+        ,#{contact_name}
+        ,#{contact_email}
+        ,#{contact_noc}
+        ,#{contact_fix_phone}
+        ,#{contact_mobile_phone}
+        ,#{vendor_name}
+        <if test='open_dt != null and open_dt != ""'>
+            ,#{open_dt}
+        </if>
+        <if test="open_dt == ''">
+            ,null
+        </if>
+        ,#{status}
+        ,#{dsbd_yn}
+        ,#{crt_id}
+        ,now()
+        ,#{crt_id}
+        ,now()
+        )
+    </insert>
+
+    <!-- Diameter 정보를 삭제 한다 -->
+    <delete id="deleteDiameter" parameterType="DiameterInfo">
+        DELETE FROM conf_diameter_peer WHERE HOST = #{host} AND LOCALITY = #{locality}
+    </delete>
+
+</mapper>
+

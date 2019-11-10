@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.setting.realm">
+
+    <!-- Realm 존재 체크 -->
+    <select id="getRealmExist" resultType="String" parameterType="String">
+        SELECT  '1'
+	        FROM DUAL
+        WHERE EXISTS (SELECT 1
+                          FROM COMM_REALM_CARRIER CCP
+                      WHERE CCP.REALM = #{srchVal})
+	</select>
+
+    <!-- REALM설정정보 매핑을 설정 -->
+    <resultMap id="sbcMap" type="RealmInfo">
+        <result property="realm" column="REALM"/>
+        <result property="realm_carrier_name" column="REALM_CARRIER_NAME"/>
+        <result property="remark1" column="REMARK1"/>
+        <result property="upd_id" column="UPD_ID"/>
+        <result property="sbc_group_id" column="SBC_GROUP_ID"/>
+        <result property="upd_id_name" column="UPD_ID_NAME"/>
+        <result property="upd_dt" column="UPD_DT"/>
+    </resultMap>
+    <!-- REALM설정정보 취득 -->
+    <select id="getRealmDetail" resultMap="sbcMap" parameterType="RealmInfo">
+         SELECT
+             A.REALM
+            ,A.REALM_CARRIER_NAME
+            ,A.REMARK1
+            ,A.UPD_ID
+            ,A.SBC_GROUP_ID
+            ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID_NAME
+            ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+         FROM COMM_REALM_CARRIER A
+         WHERE A.REALM = #{realm}
+         
+    </select>
+
+    <!-- REALM설정정보를 갱신 한다 -->
+    <update id="doUpdateRealmInfo" parameterType="RealmInfo">
+     UPDATE COMM_REALM_CARRIER
+         SET
+           REALM_CARRIER_NAME = #{realm_carrier_name},
+           REMARK1 = #{remark1},
+           SBC_GROUP_ID = #{sbc_group_id},
+           UPD_ID  = #{upd_id},
+           UPD_DT  = now()
+        WHERE REALM = #{realm}
+    </update>
+
+    <!-- REALM설정정보 리스트 갯수 취득 -->
+    <select id="getRealmInfoListCount" resultType="int" parameterType="RealmSearchInfo">
+        SELECT COUNT(1)
+        FROM COMM_REALM_CARRIER A
+        WHERE 1=1
+        <if test='srch_realm  != "null" and srch_realm != null and srch_realm != ""'>
+            AND A.REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+        <if test='srch_realm_carrier_name  != "null" and srch_realm_carrier_name != null and srch_realm_carrier_name != ""'>
+            AND A.REALM_CARRIER_NAME LIKE CONCAT('%', #{srch_realm_carrier_name}, '%')
+        </if>
+    </select>
+
+    <!-- REALM설정정보리스트 매핑을 설정  -->
+    <resultMap id="sbcListMap" type="RealmInfo">
+        <result property="realm" column="REALM"/>
+        <result property="realm_carrier_name" column="REALM_CARRIER_NAME"/>
+        <result property="remark1" column="REMARK1"/>
+        <result property="sbc_group_id" column="SBC_GROUP_ID"/>
+        <result property="upd_id" column="UPD_ID"/>
+        <result property="upd_id_name" column="UPD_ID_NAME"/>
+        <result property="upd_dt" column="UPD_DT"/>
+    </resultMap>
+    <!-- REALM설정정보 리스트  취득 -->
+    <select id="getRealmInfoList" resultMap="sbcListMap" parameterType="RealmSearchInfo">
+        SELECT
+        A.REALM
+        ,A.REALM_CARRIER_NAME
+        ,A.REMARK1
+        ,A.SBC_GROUP_ID
+        ,A.UPD_ID
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID_NAME
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        COMM_REALM_CARRIER A
+        WHERE 1=1
+        <if test='srch_realm  != "null" and srch_realm != null and srch_realm != ""'>
+            AND A.REALM LIKE CONCAT('%', #{srch_realm}, '%')
+        </if>
+        <if test='srch_realm_carrier_name  != "null" and srch_realm_carrier_name != null and srch_realm_carrier_name != ""'>
+            AND A.REALM_CARRIER_NAME LIKE CONCAT('%', #{srch_realm_carrier_name}, '%')
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="doInsertRealmInfo" parameterType="RealmInfo">
+        INSERT INTO COMM_REALM_CARRIER (
+                REALM
+               ,REALM_CARRIER_NAME
+               ,REMARK1
+               ,SBC_GROUP_ID
+               ,CRT_ID
+               ,CRT_DT
+               ,UPD_ID
+               ,UPD_DT
+               )
+        VALUES(#{realm}
+               ,#{realm_carrier_name}
+               ,#{remark1}
+               ,#{sbc_group_id}
+               ,#{crt_id}
+               ,now()
+               ,#{crt_id}
+               ,now() )
+    </insert>
+
+    <!-- REALM설정정보를 삭제 한다 -->
+    <delete id="doDeleteRealmInfo">
+        DELETE FROM COMM_REALM_CARRIER WHERE REALM = #{realm}     
+    </delete>
+
+</mapper>
+

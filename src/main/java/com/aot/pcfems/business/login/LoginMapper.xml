@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.login">
+
+    <!-- 유저 정보 검색 -->
+    <select id="getUserInfo" resultType="UserVO">
+        SELECT 
+        	   A.EMP_ID 									AS USER_ID, 
+		       FNC_GET_DECRYPT(A.EMPNM)			AS USER_NAME, 
+		       A.PASSWORD 								AS PASSWORD, 
+		       B.GROUP_ID 									AS GROUPID, 
+		       B.GROUP_NM 								AS GROUPNM, 
+		       B.LEVELCOD 								AS GROUPLEVELCOD, 
+		       C.LEVELCOD_NM 							AS GROUPLEVELCODNM,
+		       A.EMAIL 										AS EMAIL, 
+		       FNC_GET_DECRYPT(A.SMSPHONE) 	AS PHONE	       
+		  FROM MGMT_SYSUSR1T A, 
+		       MGMT_SYSUSRGRP B, 
+		       (
+		       	SELECT CODE AS LEVELCOD,	CODENM AS LEVELCOD_NM 
+		          FROM MGMT_SYSCOD2T 
+		        WHERE GRCODE = 'P104' 
+		            AND USE_YN = 'Y'
+		       ) C 		       		       
+		 WHERE 1=1 
+		 	   	AND A.STATUS 		= '01'
+		       	AND B.GROUP_ID 		= A.USER_GROUP_ID 
+		       	AND C.LEVELCOD 		= B.LEVELCOD
+		       	AND A.EMP_ID 		= #{id}
+		       	AND A.PASSWORD 	= #{password}
+		  	       	
+    </select>
+
+
+    <!-- 로그인/로그아웃시 로그 생성 -->
+    <insert id="setConnLog" parameterType="UserVO">
+        INSERT INTO MGMT_LOGIN_HIS(USERID
+                               ,LOGIN_DATE
+                               ,LOGIN_TIME
+                               ,STATUS
+                               ,CRT_DT
+                               ,CRT_ID
+                               ,UPD_DT
+                               ,UPD_ID
+                               )
+                        VALUES (#{user_id}
+                               ,#{loginDate}
+                               ,#{loginTime}
+                               ,#{status}
+                               ,NOW()
+                               ,#{user_id}
+                               ,NOW()
+                               ,#{user_id}
+                               )
+    </insert>
+
+</mapper>

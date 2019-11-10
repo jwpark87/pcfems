@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.admin.emp">
+
+    <!-- 유저아이디 존재 체크 -->
+    <select id="getUserInfoExist" resultType="String" parameterType="String">
+        SELECT  '1'
+		  FROM DUAL
+		 WHERE EXISTS (SELECT 1
+		                 FROM MGMT_SYSUSR1T K
+		                WHERE K.EMP_ID = #{userId})
+	</select>
+
+    <!-- 사용자정보 매핑을 설정 -->
+    <resultMap id="empMap" type="EmpInfo">
+        <result property="emp_id" column="EMP_ID"/>
+        <result property="empNm" column="EMPNM"/>
+        <result property="password" column="PASSWORD"/>
+        <result property="oldPassword" column="PASSWORD"/>
+        <result property="user_group_id" column="USER_GROUP_ID"/>
+        <result property="email" column="EMAIL"/>
+        <result property="smsPhone" column="SMSPHONE"/>
+        <result property="company_id" column="COMPANY_ID"/>
+        <result property="company_nm" column="COMPANY_NM"/>
+        <result property="home_zip" column="HOME_ZIP"/>
+        <result property="home_addr1" column="HOME_ADDR1"/>
+        <result property="home_addr2" column="HOME_ADDR2"/>
+
+    </resultMap>
+    <!-- 유저정보 취득 -->
+    <select id="getEmpDetail" resultMap="empMap" parameterType="EmpInfo">
+         SELECT
+         		EMP_ID,
+    	        FNC_GET_DECRYPT(EMPNM) EMPNM,
+    	        PASSWORD,
+                USER_GROUP_ID,
+                EMAIL,
+                FNC_GET_DECRYPT(SMSPHONE) SMSPHONE,
+                COMPANY_ID,                
+                (SELECT CASE #{user_lang} WHEN 'KOR' THEN COMPANY_NAME_KR WHEN 'ENG' THEN COMPANY_NAME_EN ELSE COMPANY_NAME_KR END FROM COMM_COMPANY WHERE COMPANY_ID = A.COMPANY_ID) COMPANY_NM,
+                HOME_ZIP,
+                HOME_ADDR1,
+                HOME_ADDR2
+           FROM VW_COMM_SYSUSR1T A
+          WHERE A.EMP_ID = #{emp_id}
+	     
+	</select>
+
+    <!-- 유저정보를 갱신 한다 -->
+    <update id="doUpdateEmpInfo" parameterType="EmpInfo">
+        UPDATE MGMT_SYSUSR1T
+        SET EMPNM = FNC_GET_ENCRYPT(#{empNm}),
+        <if test='password  != "null" and password != null and password != ""'>
+            PASSWORD = #{password},
+        </if>
+        USER_GROUP_ID = #{user_group_id},
+        EMAIL = #{email},
+        SMSPHONE = FNC_GET_ENCRYPT(#{smsPhone}),
+        UPD_ID = #{crt_user},
+        UPD_DT = now()
+        WHERE EMP_ID = #{emp_id}
+    </update>
+
+    <!-- 유저정보 리스트 갯수 취득 -->
+    <select id="getUserInfoListCount" resultType="int" parameterType="EmpSearchInfo">
+        SELECT COUNT(1)
+        FROM VW_COMM_SYSUSR1T A ,
+        VW_MGMT_GROUPLEVEL B
+        WHERE 1=1
+        AND A.LEVELCOD = B.LEVELCOD
+        AND A.LEVELCOD <![CDATA[<>]]> '000'
+
+        <if test='searchKey == "0" '>
+            <if test="searchVal  != ''">
+                AND A.EMP_ID LIKE CONCAT('%', #{searchVal}, '%')
+            </if>
+        </if>
+        <if test='searchKey == "1" '>
+            <if test="searchVal  != ''">
+                AND A.EMPNM LIKE CONCAT('%', #{searchVal}, '%')
+            </if>
+        </if>
+
+    </select>
+
+    <!-- 사용자정보리스트 매핑을 설정  -->
+    <resultMap id="empListMap" type="EmpInfo">
+        <result property="emp_id" column="EMP_ID"/>
+        <result property="empNm" column="EMPNM"/>
+        <result property="user_group_id" column="USER_GROUP_ID"/>
+        <result property="user_group_nm" column="USER_GROUP_NM"/>
+        <result property="email" column="EMAIL"/>
+        <result property="smsPhone" column="SMSPHONE"/>
+        <result property="levelCod" column="LEVELCOD"/>
+        <result property="levelCodNm" column="LEVELCODNM"/>
+    </resultMap>
+    <!-- 유저정보 리스트  취득 -->
+    <select id="getUserInfoList" resultMap="empListMap" parameterType="EmpSearchInfo">
+        SELECT
+        A.EMP_ID AS EMP_ID
+        ,FNC_GET_DECRYPT(A.EMPNM) AS EMPNM
+        ,A.USER_GROUP_ID AS USER_GROUP_ID
+        ,A.USER_GROUP_NM AS USER_GROUP_NM
+        ,A.EMAIL AS EMAIL
+        ,FNC_GET_DECRYPT(A.SMSPHONE) AS SMSPHONE
+        ,A.LEVELCOD AS LEVELCOD
+        ,(SELECT
+        (CASE #{user_lang} WHEN 'KOR' THEN B.CODENM_K WHEN 'ENG' THEN B.CODENM_E WHEN 'JPN' THEN B.CODENM_J ELSE B.CODENM_K END)
+        FROM MGMT_SYSCOD2T B
+        WHERE GRCODE = 'P104'
+        AND CODE = A.LEVELCOD
+        ) AS LEVELCODNM
+        FROM
+        VW_COMM_SYSUSR1T A,
+        VW_MGMT_GROUPLEVEL B
+        WHERE 1=1
+        AND A.LEVELCOD = B.LEVELCOD
+        AND A.LEVELCOD <![CDATA[<>]]> '000'
+
+        <if test='searchKey == "0" '>
+            <if test="searchVal  != ''">
+                AND A.EMP_ID LIKE CONCAT('%', #{searchVal}, '%')
+            </if>
+        </if>
+        <if test='searchKey == "1" '>
+            <if test="searchVal  != ''">
+                AND FNC_GET_DECRYPT(A.EMPNM) LIKE CONCAT('%', #{searchVal}, '%')
+            </if>
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="doInsertEmpInfo" parameterType="EmpInfo">
+	 INSERT INTO MGMT_SYSUSR1T (EMP_ID
+                            ,EMPNM
+                            ,PASSWORD
+                            ,USER_GROUP_ID
+                            ,EMAIL
+                            ,SMSPHONE
+                            ,COMPANY_ID
+                            ,HOME_ZIP
+                            ,HOME_ADDR1
+                            ,HOME_ADDR2                                                        
+                            ,STATUS
+                            ,CRT_ID
+                            ,CRT_DT
+                            ,UPD_ID
+                            ,UPD_DT)
+        VALUES(#{emp_id}
+               ,FNC_GET_ENCRYPT(#{empNm})
+               ,#{password}
+               ,#{user_group_id}
+               ,#{email}
+               ,FNC_GET_ENCRYPT(#{smsPhone})
+               ,#{company_id}
+               ,#{home_zip}
+               ,#{home_addr1}
+               ,#{home_addr2}                              
+               ,'01'
+               ,#{crt_user}
+               ,now()
+               ,#{crt_user}
+               ,now() )
+	</insert>
+
+    <!-- 유저정보를 삭제 한다 -->
+    <delete id="doDeleteEmpInfo">
+		DELETE FROM MGMT_SYSUSR1T WHERE EMP_ID = #{emp_Id}	 
+	</delete>
+
+    <!-- 사용자그룹 맵핑을 설정 -->
+    <resultMap id="userGroupCodeMap" type="CodeInfo">
+        <result property="code" column="GROUP_ID"/>
+        <result property="name" column="GROUP_NM"/>
+        <result property="codenm_k" column="GROUP_NM"/>
+        <result property="codenm_e" column="GROUP_NM"/>
+        <result property="codenm_j" column="GROUP_NM"/>
+    </resultMap>
+
+    <!-- 사용자그룹 정보를 취득한다 -->
+    <select id="getUserGroupCodeInfoEmp" resultMap="userGroupCodeMap">
+	     SELECT A.LEVELCOD
+              ,A.GROUP_ID
+              ,A.GROUP_NM
+              ,A.GROUP_NM
+              ,A.GROUP_NM
+              ,A.GROUP_NM
+              ,A.REMARK
+        FROM MGMT_SYSUSRGRP A
+        WHERE 1 = 1
+          AND A.LEVELCOD <![CDATA[>=]]> (SELECT K.LEVELCOD FROM VW_MGMT_SYSUSRINFO K WHERE K.USER_ID = #{userId} AND K.GROUP_ID = #{user_group_id})
+          AND A.LEVELCOD <![CDATA[>=]]> '100'
+        ORDER BY A.LEVELCOD ASC, A.GROUP_ID ASC
+	</select>
+
+</mapper>
+

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.admin.groupmenu">
+
+    <!-- 메뉴정보빈 -->
+    <resultMap id="groupMenuListInfo" type="MenuInfo">
+        <result property="menuId" column="MENU_ID"/>
+        <result property="menuNm" column="MENU_NM"/>
+        <result property="upMenuId" column="P_MENU_ID"/>
+        <result property="menuType" column="MENU_TYPE"/>
+        <result property="seq" column="SEQ"/>
+        <result property="url" column="URL"/>
+        <result property="level" column="LVL"/>
+        <result property="isChecked" column="CHECKED"/>
+    </resultMap>
+
+
+    <!-- 메뉴리스트정보를 취득한다 -->
+    <select id="doGetGroupMenuList" resultMap="groupMenuListInfo">
+        SELECT A.MENU_ID ,
+        (
+        CASE #{lang}
+        WHEN 'KOR'
+        THEN A.MENU_NM_KOR
+        WHEN 'ENG'
+        THEN A.MENU_NM_ENG
+        WHEN 'JPN'
+        THEN A.MENU_NM_JPN
+        ELSE A.MENU_NM_KOR
+        END
+        ) AS MENU_NM ,
+        A.P_MENU_ID ,
+        A.MENU_TYPE ,
+        A.SEQ ,
+        A.URL ,
+        A.LVL ,
+        (CASE WHEN A.MENU_ID = 'MENUID_0000'
+        THEN
+        ( 'checked' )
+        ELSE (
+        CASE WHEN CONCAT(B.MENU_ID, B.P_MENU_ID) IS NULL THEN
+        ''
+        WHEN CONCAT(B.MENU_ID, B.P_MENU_ID) = '' THEN
+        ''
+        ELSE
+        'checked'
+        END
+        )
+
+        END) CHECKED
+        <!--  (CASE
+          WHEN CONCAT(B.MENU_ID, B.P_MENU_ID) IS NULL THEN
+              ''
+          WHEN CONCAT(B.MENU_ID, B.P_MENU_ID) = '' THEN
+              ''
+          ELSE
+              'checked'
+          END) CHECKED -->
+        FROM MGMT_MENUMST A
+        LEFT OUTER JOIN
+        (SELECT MENU_ID,
+        (CASE WHEN P_MENU_ID = '' THEN '1' WHEN P_MENU_ID IS NULL THEN '1' ELSE P_MENU_ID END) P_MENU_ID
+        FROM MGMT_GROUPLEVEL_MENU
+        WHERE LEVELCOD = #{groupLevel}
+        ) B
+        ON A.MENU_ID = B.MENU_ID
+        AND IFNULL(A.P_MENU_ID,'1') = B.P_MENU_ID
+        ORDER BY A.SEQ ASC
+
+    </select>
+
+    <!-- 메뉴정보를 등록 한다 -->
+    <insert id="doInsertGroupMenuInfo" parameterType="GroupMenuInfo">
+	    INSERT INTO MGMT_GROUPLEVEL_MENU(LEVELCOD,
+                                     MENU_ID ,
+                                     P_MENU_ID,
+                                     CRT_ID,
+                                     CRT_DT,
+                                     UPD_ID,
+                                     UPD_DT)
+	    VALUES(#{groupLevel}
+	          ,#{menuId}
+	          ,#{upMenuId}
+	          ,#{crtUser}
+	          ,NOW()
+	          ,#{crtUser}
+	          ,NOW() );
+	</insert>
+
+    <!-- 메뉴정보를 삭제 한다 -->
+    <delete id="doDeleteGroupMenuInfo" parameterType="GroupMenuInfo">
+	    DELETE FROM MGMT_GROUPLEVEL_MENU
+    	WHERE LEVELCOD = #{groupLevel}
+	</delete>
+
+
+    <!-- 권한레벨 맵핑을 설정 -->
+    <resultMap id="userGroupmenuAuthMap" type="CodeInfo">
+        <result property="code" column="LEVELCOD"/>
+        <result property="codenm_k" column="CODENM_K"/>
+        <result property="codenm_e" column="CODENM_E"/>
+        <result property="codenm_j" column="CODENM_J"/>
+    </resultMap>
+
+    <!-- 권한레벨 정보  취득 -->
+    <select id="getAuthLevelListGrMenu" resultMap="userGroupmenuAuthMap" parameterType="UserVO">
+	   	SELECT A.CODE AS LEVELCOD,
+	    			A.CODENM_K,	    			 
+	    			A.CODENM_E,
+	    			A.CODENM_J
+        FROM MGMT_SYSCOD2T A, VW_MGMT_SYSUSRINFO B
+          WHERE A.GRCODE = 'P104'
+          AND B.USER_ID = #{user_id}
+          AND B.GROUP_ID = #{groupId}
+          AND A.CODE >= B.LEVELCOD
+        ORDER BY A.CODE ASC
+	</select>
+
+    <!-- **************************레벨별 메뉴 관리 화면******************************* -->
+    <!-- 권한레벨 맵핑을 설정 -->
+    <resultMap id="userGroupAuthLevelMap" type="CodeInfo">
+        <result property="code" column="LEVELCOD"/>
+        <result property="descr" column="DESCR"/>
+        <result property="descr_kor" column="DESCR_KOR"/>
+        <result property="descr_eng" column="DESCR_ENG"/>
+    </resultMap>
+
+    <!-- 권한레벨 정보  취득 / 레벨별 화면 -  본인 하위 권한만 로딩-->
+    <!-- 	<select id="getAuthLevelListLevel" resultMap="userGroupAuthLevelMap" parameterType="UserVO"> -->
+    <!-- 	   	SELECT -->
+    <!-- 	   			A.AUTH_CODE  AS LEVELCOD -->
+    <!--               ,A.AUTH_NM_JPN 	AS DESCR  -->
+    <!--               ,A.AUTH_NM_KOR 	AS DESCR_KOR -->
+    <!--               ,A.AUTH_NM_ENG 	AS DESCR_ENG -->
+    <!--         FROM VW_MGMT_GROUPLEVEL A, VW_MGMT_SYSUSRINFO B -->
+    <!--         WHERE 1 = 1 -->
+    <!--           AND B.USER_ID   = #{user_id} -->
+    <!--           AND A.AUTH_CODE <![CDATA[>]]> B.LEVELCOD -->
+    <!--         ORDER BY A.AUTH_CODE ASC -->
+    <!-- 	</select> -->
+
+    <!-- 메뉴정보빈 -->
+    <resultMap id="groupMenuListInfoLevel" type="MenuInfo">
+        <result property="menuId" column="MENU_ID"/>
+        <result property="menuNm" column="MENU_NM"/>
+        <result property="upMenuId" column="P_MENU_ID"/>
+        <result property="menuType" column="MENU_TYPE"/>
+        <result property="seq" column="SEQ"/>
+        <result property="url" column="URL"/>
+        <result property="level" column="LVL"/>
+        <result property="isChecked" column="CHECKED"/>
+    </resultMap>
+
+
+    <!-- 메뉴리스트정보를 취득한다 로그인 유저레벨 하위 레벨에 대한 메뉴-->
+    <!-- 목록은 로그인 유저그룹에 할당된 메뉴-->
+    <!-- 체크는 검색한 유저그룹에 할당된 메뉴-->
+    <!-- 	<select id="getMenuInfoListLevel" resultMap="groupMenuListInfoLevel"> -->
+    <!-- 	    SELECT A.MENU_ID ,  -->
+    <!-- 		       ( -->
+    <!-- 		           CASE #{lang} -->
+    <!-- 		               WHEN 'KOR'  -->
+    <!-- 		               THEN A.MENU_NM_KOR  -->
+    <!-- 		               WHEN 'ENG'  -->
+    <!-- 		               THEN A.MENU_NM_ENG  -->
+    <!-- 		               WHEN 'JPN'  -->
+    <!-- 		               THEN A.MENU_NM_JPN  -->
+    <!-- 		               ELSE A.MENU_NM_KOR  -->
+    <!-- 		           END -->
+    <!-- 		       ) AS MENU_NM ,  -->
+    <!-- 		       A.P_MENU_ID ,  -->
+    <!-- 		       A.MENU_TYPE ,  -->
+    <!-- 		       A.SEQ ,  -->
+    <!-- 		       A.URL ,  -->
+    <!-- 		       A.LVL ,  -->
+    <!-- 		       (CASE WHEN A.MENU_ID = 'MENUID_0000' -->
+    <!--                   THEN  -->
+    <!--         			 (  'checked' ) -->
+    <!--                  ELSE ( -->
+    <!--                  CASE WHEN CONCAT(B.MENU_ID, B.P_MENU_ID) IS NULL THEN  -->
+    <!--         				    ''  -->
+    <!--         				WHEN CONCAT(B.MENU_ID, B.P_MENU_ID) = '' THEN  -->
+    <!--         				    ''  -->
+    <!--         				ELSE  -->
+    <!--         				    'checked' -->
+    <!--                    END -->
+    <!--                  ) -->
+
+    <!-- 				END) CHECKED -->
+    <!-- 		  FROM MGMT_MENUMST A  -->
+    <!-- 		   LEFT OUTER JOIN  -->
+    <!-- 		       (SELECT MENU_ID,  -->
+    <!-- 		              (CASE WHEN P_MENU_ID = '' THEN '1' WHEN P_MENU_ID IS NULL THEN '1' ELSE P_MENU_ID END) P_MENU_ID -->
+    <!-- 		         FROM MGMT_GROUPLEVEL_MENU  -->
+    <!-- 		        WHERE LEVELCOD = #{selGroupLevel} -->
+    <!-- 		       ) B  -->
+    <!-- 		       ON A.MENU_ID = B.MENU_ID   -->
+    <!-- 		       AND IFNULL(A.P_MENU_ID,'1') = B.P_MENU_ID -->
+    <!--         WHERE EXISTS  -->
+    <!-- 	            (SELECT MENU_ID -->
+    <!-- 			         FROM MGMT_GROUPLEVEL_MENU  -->
+    <!-- 			        WHERE LEVELCOD = #{groupLevel} -->
+    <!-- 	            and MENU_ID = A.MENU_ID -->
+    <!-- 			       )  -->
+    <!-- 		ORDER BY A.SEQ ASC -->
+    <!-- 	</select> -->
+</mapper>

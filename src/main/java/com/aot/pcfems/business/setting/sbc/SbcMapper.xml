@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.setting.sbc">
+
+    <!-- SBC NODE 명칭 존재 체크 -->
+    <select id="getSbcNodeNameExist" resultType="String" parameterType="String">
+        SELECT  '1'
+		  FROM DUAL
+		 WHERE EXISTS (SELECT 1
+		                 FROM COMM_SBC_MST CSM
+		                WHERE CSM.SBC_NODE_NAME = #{srchVal})
+	</select>
+
+    <!-- SBC NODE IP 존재 체크 -->
+    <select id="getSbcNodeIpExist" resultType="String" parameterType="String">
+        SELECT  '1'
+		  FROM DUAL
+		 WHERE EXISTS (SELECT 1
+		                 FROM COMM_SBC_MST CSM
+		                WHERE CSM.SBC_NODE_IP = #{srchVal})
+	</select>
+
+
+    <!-- SBC설정정보 매핑을 설정 -->
+    <resultMap id="sbcMap" type="SbcInfo">
+        <result property="sbc_node_name" column="SBC_NODE_NAME"/>
+        <result property="sbc_node_ip" column="SBC_NODE_IP"/>
+        <result property="sbc_group_id" column="SBC_GROUP_ID"/>
+        <result property="sbc_group_name" column="SBC_GROUP_NAME"/>
+        <result property="remark1" column="REMARK1"/>
+        <result property="upd_id" column="UPD_ID"/>
+        <result property="upd_id_name" column="UPD_ID_NAME"/>
+        <result property="upd_dt" column="UPD_DT"/>
+    </resultMap>
+    <!-- SBC설정정보 취득 -->
+    <select id="getSbcDetail" resultMap="sbcMap" parameterType="SbcInfo">
+         SELECT
+        	 A.SBC_NODE_NAME
+   	        ,A.SBC_NODE_IP
+   	        ,A.SBC_GROUP_ID
+   	        ,FNC_GET_GRCODE_NAME_EX("SBC_GROUP_ID", SBC_GROUP_ID, #{user_lang}) SBC_GROUP_NAME
+            ,A.REMARK1
+            ,A.UPD_ID
+            ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID_NAME
+            ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+         FROM COMM_SBC_MST A
+         WHERE A.SBC_NODE_NAME = #{sbc_node_name}
+	     
+	</select>
+
+    <!-- SBC설정정보를 갱신 한다 -->
+    <update id="doUpdateSbcInfo" parameterType="SbcInfo">
+	 UPDATE COMM_SBC_MST
+ 		SET
+           SBC_NODE_IP = #{sbc_node_ip},
+           SBC_GROUP_ID = #{sbc_group_id},
+           REMARK1 = #{remark1},
+           UPD_ID	= #{upd_id},
+           UPD_DT 	= now()
+		WHERE SBC_NODE_NAME = #{sbc_node_name}
+	</update>
+
+    <!-- SBC설정정보 리스트 갯수 취득 -->
+    <select id="getSbcInfoListCount" resultType="int" parameterType="SbcSearchInfo">
+        SELECT COUNT(1)
+        FROM COMM_SBC_MST A
+        WHERE 1=1
+        <if test='srch_sbc_node_name  != "null" and srch_sbc_node_name != null and srch_sbc_node_name != ""'>
+            AND A.SBC_NODE_NAME LIKE CONCAT('%', #{srch_sbc_node_name}, '%')
+        </if>
+        <if test='srch_sbc_node_ip  != "null" and srch_sbc_node_ip != null and srch_sbc_node_ip != ""'>
+            AND A.SBC_NODE_IP LIKE CONCAT('%', #{srch_sbc_node_ip}, '%')
+        </if>
+        <if test='srch_sbc_group_id  != "null" and srch_sbc_group_id != null and srch_sbc_group_id != ""'>
+            AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        </if>
+    </select>
+
+    <!-- SBC설정정보리스트 매핑을 설정  -->
+    <resultMap id="sbcListMap" type="SbcInfo">
+        <result property="sbc_node_name" column="SBC_NODE_NAME"/>
+        <result property="sbc_node_ip" column="SBC_NODE_IP"/>
+        <result property="sbc_group_id" column="SBC_GROUP_ID"/>
+        <result property="sbc_group_name" column="SBC_GROUP_NAME"/>
+        <result property="remark1" column="REMARK1"/>
+        <result property="upd_id" column="UPD_ID"/>
+        <result property="upd_id_name" column="UPD_ID_NAME"/>
+        <result property="upd_dt" column="UPD_DT"/>
+    </resultMap>
+    <!-- SBC설정정보 리스트  취득 -->
+    <select id="getSbcInfoList" resultMap="sbcListMap" parameterType="SbcSearchInfo">
+        SELECT
+        A.SBC_NODE_NAME
+        ,A.SBC_NODE_IP
+        ,A.SBC_GROUP_ID
+        ,FNC_GET_GRCODE_NAME_EX("SBC_GROUP_ID", A.SBC_GROUP_ID, #{user_lang}) SBC_GROUP_NAME
+        ,A.REMARK1
+        ,A.UPD_ID
+        ,(SELECT FNC_GET_DECRYPT(EMPNM) FROM VW_COMM_SYSUSR1T WHERE EMP_ID = A.UPD_ID) AS UPD_ID_NAME
+        ,DATE_FORMAT(A.UPD_DT, '%Y-%m-%d %H:%i:%s') UPD_DT
+        FROM
+        COMM_SBC_MST A
+        WHERE 1=1
+        <if test='srch_sbc_node_name  != "null" and srch_sbc_node_name != null and srch_sbc_node_name != ""'>
+            AND A.SBC_NODE_NAME LIKE CONCAT('%', #{srch_sbc_node_name}, '%')
+        </if>
+        <if test='srch_sbc_node_ip  != "null" and srch_sbc_node_ip != null and srch_sbc_node_ip != ""'>
+            AND A.SBC_NODE_IP LIKE CONCAT('%', #{srch_sbc_node_ip}, '%')
+        </if>
+        <if test='srch_sbc_group_id  != "null" and srch_sbc_group_id != null and srch_sbc_group_id != ""'>
+            AND A.SBC_GROUP_ID = #{srch_sbc_group_id}
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        <if test='search_excel_type  != "EXCEL"'>
+            LIMIT #{startPageIndex} ,#{endPageIndex}
+        </if>
+    </select>
+
+    <insert id="doInsertSbcInfo" parameterType="SbcInfo">
+		INSERT INTO COMM_SBC_MST (SBC_NODE_NAME
+                            ,SBC_NODE_IP
+                            ,SBC_GROUP_ID
+                            ,REMARK1
+                            ,CRT_ID
+                            ,CRT_DT
+                            ,UPD_ID
+                            ,UPD_DT)
+		VALUES(#{sbc_node_name}
+               ,#{sbc_node_ip}
+               ,#{sbc_group_id}
+               ,#{remark1}
+               ,#{crt_id}
+               ,now()
+               ,#{crt_id}
+               ,now() )
+	</insert>
+
+    <!-- SBC설정정보를 삭제 한다 -->
+    <delete id="doDeleteSbcInfo">
+		DELETE FROM COMM_SBC_MST WHERE SBC_NODE_NAME = #{sbc_node_name}	 
+	</delete>
+
+</mapper>
+

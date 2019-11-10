@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.aot.pcfems.business.admin.syscod">
+
+    <!-- 시스템그룹코드 정보  취득 -->
+    <select id="getSysCodCnt" parameterType="SysCodVO" resultType="int">
+        SELECT COUNT(*)
+        FROM(
+        SELECT A.GRCODE
+        , A.GRCODENM_K
+        , A.GRCODENM_E
+        , A.GRCODENM_J
+        , DATE_FORMAT(A.upd_dt, '%Y-%m-%d %H:%i:%s') AS UPD_DT
+        , (SELECT FNC_GET_DECRYPT(EMPNM) from mgmt_sysusr1t where EMP_ID = A.UPD_ID) AS UPD_ID
+        FROM mgmt_syscod1t A
+        WHERE 1=1
+        <if test=' grcode != null and grcode != ""'>
+            AND GRCODE LIKE CONCAT('%', #{grcode}, '%')
+        </if>
+        <if test=' grcodenm_k != null and grcodenm_k != ""'>
+            AND GRCODENM_K LIKE CONCAT('%', #{grcodenm_k}, '%')
+        </if>
+        <if test=' grcodenm_e != null and grcodenm_e != ""'>
+            AND GRCODENM_E LIKE CONCAT('%', #{grcodenm_e}, '%')
+        </if>
+        <if test=' grcodenm_j != null and grcodenm_j != ""'>
+            AND GRCODENM_J LIKE CONCAT('%', #{grcodenm_j}, '%')
+        </if>
+        ) A
+    </select>
+    <!-- 시스템그룹코드 정보  취득 -->
+    <select id="getSysCod" parameterType="SysCodVO" resultType="SysCodVO">
+        SELECT A.GRCODE
+        , A.GRCODENM_K
+        , A.GRCODENM_E
+        , A.GRCODENM_J
+        , DATE_FORMAT(A.upd_dt, '%Y-%m-%d %H:%i:%s') AS UPD_DT
+        , (SELECT FNC_GET_DECRYPT(EMPNM) from mgmt_sysusr1t where EMP_ID = A.UPD_ID) AS UPD_ID
+        FROM mgmt_syscod1t A
+        WHERE 1=1
+        <if test=' grcode != null and grcode != ""'>
+            AND GRCODE LIKE CONCAT('%', #{grcode}, '%')
+        </if>
+        <if test=' grcodenm_k != null and grcodenm_k != ""'>
+            AND GRCODENM_K LIKE CONCAT('%', #{grcodenm_k}, '%')
+        </if>
+        <if test=' grcodenm_e != null and grcodenm_e != ""'>
+            AND GRCODENM_E LIKE CONCAT('%', #{grcodenm_e}, '%')
+        </if>
+        <if test=' grcodenm_j != null and grcodenm_j != ""'>
+            AND GRCODENM_J LIKE CONCAT('%', #{grcodenm_j}, '%')
+        </if>
+        ORDER BY ${jqSidx} ${jqSord}
+        LIMIT #{startPageIndex} , #{endPageIndex}
+    </select>
+
+    <!-- 기등록여부 체크 -->
+    <select id="getSysCodExist" resultType="int">
+	    SELECT COUNT(*)
+	    FROM mgmt_syscod1t A
+	    WHERE 1 = 1
+	      AND A.DSP_YN = 'Y'
+	      AND A.GRCODE = #{grcode}
+	</select>
+
+    <!-- 시스템그룹코드 정보  등록-->
+    <insert id="insertSysCod" parameterType="SysCodVO">
+	    INSERT INTO mgmt_syscod1t(
+										GRCODE															   
+									   ,GRCODENM_K
+									   ,GRCODENM_E
+									   ,GRCODENM_J
+									   ,DSP_YN
+									   ,CRT_DT
+									   ,CRT_ID
+									   ,UPD_DT
+									   ,UPD_ID
+									)
+							VALUES (
+										   #{grcode}
+										   ,#{grcodenm_k}
+										   ,#{grcodenm_e}
+										   ,#{grcodenm_j}
+										   ,'Y'
+										   ,now()
+										   ,#{upd_id}
+										   ,now()
+										   ,#{upd_id}
+										)	   
+	</insert>
+
+    <!-- 시스템그룹코드 정보  수정-->
+    <update id="updateSysCod" parameterType="SysCodVO">
+	   UPDATE mgmt_syscod1t
+    		SET 
+    			 GRCODENM_K 	= #{grcodenm_k}
+    			 ,GRCODENM_E 	= #{grcodenm_e}
+    			 ,GRCODENM_J 	= #{grcodenm_j}    			     			 
+    			 ,UPD_DT 			= now()
+    			 ,UPD_ID 			= #{upd_id}
+    		WHERE  GRCODE 		= #{grcode}
+	</update>
+
+    <select id="detailCodeCount" parameterType="SysCodVO" resultType="Int">
+		SELECT COUNT(*) 
+		FROM mgmt_syscod2t
+	  WHERE GRCODE = #{grcode}
+	</select>
+
+    <!-- 시스템그룹코드 정보  삭제-->
+    <delete id="deleteSysCod" parameterType="SysCodVO">
+	    DELETE FROM mgmt_syscod1t
+	    WHERE 1 = 1	      
+	      AND GRCODE = #{grcode}	    
+	</delete>
+
+    <select id="getMaxSortNo" parameterType="SysCodVO" resultType="SysCodVO">
+    		SELECT IFNULL(MAX(SORTSEQ),'0') AS MAX_SORT_NO  
+    		   FROM mgmt_syscod2t
+			WHERE GRCODE = #{grcode}
+    </select>
+
+    <!-- ////////////////////////////////////// 상세 목록 ////////////////////////////////////////////////////////////////////// -->
+    <!-- 시스템그룹상세코드 목록 갯수 취득 -->
+    <select id="getSysCodDtlCnt" resultType="int" parameterType="SysCodVO">
+	   SELECT COUNT(*) 
+	   FROM(
+	     		SELECT GRCODE
+					, CODE
+					, CODENM
+					, USE_YN
+					, CODENM_K
+					, CODENM_E
+					, CODENM_J
+					, SORTSEQ
+					, CRT_DT
+					, CRT_ID
+					, UPD_DT
+					, UPD_ID
+		  FROM mgmt_syscod2t
+		  WHERE GRCODE = #{grcode}
+       ) A
+	    
+	</select>
+    <!-- 시스템그룹상세코드 정보  취득 -->
+    <select id="getSysCodDtl" parameterType="SysCodVO" resultType="SysCodVO">
+          	  SELECT A.GRCODE
+					, A.CODE
+					, A.CODENM
+					, FNC_GET_GRCODE_NAME("W001", A.USE_YN) AS USE_YN_NM
+					, A.USE_YN
+					, A.CODENM_K
+					, A.CODENM_E
+					, A.CODENM_J				
+					, A.SORTSEQ
+					, A.LEVELCOD
+					, FNC_GET_GRCODE_NAME("P104", A.LEVELCOD) LEVELCODNM
+					, A.CRT_DT
+					, A.CRT_ID					
+				    , DATE_FORMAT(A.upd_dt, '%Y-%m-%d %H:%i:%s') AS UPD_DT
+                    , (SELECT FNC_GET_DECRYPT(EMPNM) from mgmt_sysusr1t where EMP_ID = A.UPD_ID) AS UPD_ID
+		  FROM mgmt_syscod2t A
+		  WHERE GRCODE = #{grcode}
+			ORDER BY ${jqSidx} ${jqSord}
+			LIMIT #{startPageIndex} , #{endPageIndex}
+	</select>
+
+
+    <!-- 기등록여부 체크 -->
+    <select id="getSysCodDtlExist" resultType="int">
+	   SELECT COUNT(*) FROM mgmt_syscod2t
+    		WHERE GRCODE 	= #{grcode}
+    		AND CODE 			= #{code}
+	</select>
+
+    <!-- 시스템그룹상세코드 정보  등록-->
+    <insert id="insertSysCodDtl" parameterType="SysCodVO">
+        <selectKey keyProperty="sort_seq" resultType="String" order="BEFORE">
+            SELECT CONVERT(IFNULL(MAX(SORTSEQ),0) + 1, CHAR) AS SORT_SEQ
+            FROM mgmt_syscod2t
+            WHERE GRCODE = #{grcode}
+        </selectKey>
+        INSERT INTO mgmt_syscod2t(GRCODE,CODE,CODENM,CODENM_K,CODENM_E, CODENM_J,USE_YN,LEVELCOD,SORTSEQ,CRT_DT,CRT_ID,UPD_DT,UPD_ID)
+        VALUES (#{grcode},#{code},#{codenm},#{codenm_k},#{codenm_e}, #{codenm_j},#{use_yn},#{levelcod},#{sort_seq},now(),#{upd_id},now(),#{upd_id})
+    </insert>
+
+    <!-- 시스템그룹상세코드 정보  수정-->
+    <update id="updateSysCodDtl" parameterType="SysCodVO">
+	    UPDATE mgmt_syscod2t
+    		SET CODENM 		= #{codenm}
+    			 ,CODENM_K 	= #{codenm_k}
+    			 ,CODENM_E 	= #{codenm_e}
+    			 ,CODENM_J 	= #{codenm_j}
+    			 ,LEVELCOD		= #{levelcod}    			
+    			 ,USE_YN		= #{use_yn}
+    			 ,UPD_DT 		= now()
+    			 ,UPD_ID	 		= #{upd_id}
+    	WHERE GRCODE 		= #{grcode}
+    		AND CODE 			= #{code}
+	</update>
+
+    <!-- 시스템그룹상세코드 정보  삭제-->
+    <delete id="deleteSysCodDtl" parameterType="SysCodVO">
+	    DELETE FROM mgmt_syscod2t
+		WHERE grcode = #{grcode}
+		AND 	code = #{code}
+	</delete>
+
+    <!-- 권한레벨 맵핑을 설정 -->
+    <resultMap id="userGroupmenuAuthMap" type="CodeInfo">
+        <result property="code" column="CODE"/>
+        <result property="codenm_k" column="CODENM_K"/>
+        <result property="codenm_e" column="CODENM_E"/>
+        <result property="codenm_j" column="CODENM_J"/>
+    </resultMap>
+
+    <!-- 권한레벨 정보  취득 -->
+    <select id="getAuthLevelListSys" resultMap="userGroupmenuAuthMap">
+	    SELECT A.CODE,
+	    			A.CODENM_K,	    			 
+	    			A.CODENM_E,
+	    			A.CODENM_J
+        FROM MGMT_SYSCOD2T A, VW_MGMT_SYSUSRINFO B
+          WHERE A.GRCODE 	= 'P104'
+          AND B.USER_ID 		= #{user_id}
+          AND A.CODE <![CDATA[>=]]> B.LEVELCOD
+        ORDER BY A.CODE ASC	    
+	</select>
+
+</mapper>
+ 	
